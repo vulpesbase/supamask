@@ -1,0 +1,26 @@
+# Dependencies
+/vendor/
+
+# Composer lock (libraries usually don't commit this)
+composer.lock
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.*
+
+# PHPUnit
+.phpunit.result.cache
+
+# Coverage
+coverage/

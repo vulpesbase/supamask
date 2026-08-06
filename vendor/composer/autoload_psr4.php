@@ -6,5 +6,5 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Devgonerogue\\Supamask\\' => array($baseDir . '/src'),
+    'Supamask\\' => array($baseDir . '/src'),
 );
