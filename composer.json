@@ -1,0 +1,12 @@
+{
+    "name": "devgonerogue/supamask",
+    "description": "The ultimate cloaking framework for PHP.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Devgonerogue\\Supamask\\": "src/"
+        }
+    },
+    "require": {}
+}
