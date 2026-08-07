@@ -7,8 +7,7 @@ use Supamask\Supamask;
 Supamask::boot([
     'ip_blocking' => [
         'ips' => [
-            '127.0.0.1',
-            '::1',
+            '::1/128',
         ],
     ],
 ]);

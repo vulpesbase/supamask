@@ -7,12 +7,19 @@ use Supamask\Contracts\BlocklistInterface;
 class CustomBlocklist implements BlocklistInterface
 {
     public function __construct(
-        private array $ips = []
+        private array $rules = [],
+        private IpMatcher $matcher = new IpMatcher()
     ) {
     }
 
     public function contains(string $ip): bool
     {
-        return in_array($ip, $this->ips, true);
+        foreach ($this->rules as $rule) {
+            if ($this->matcher->matches($ip, $rule)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
