@@ -8,5 +8,18 @@
       "Supamask\\": "src/"
     }
   },
-  "require": {}
+  "require": {
+    "php": ">=8.1"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "*"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Supamask\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit"
+  }
 }

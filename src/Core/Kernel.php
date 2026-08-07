@@ -95,6 +95,7 @@ class Kernel
                     $response['body'],
                     $response['headers']
                 ))->send();
+                break;
 
             case Decision::DENY:
                 $response = $this->config->get(
@@ -111,6 +112,7 @@ class Kernel
                     $response['body'],
                     $response['headers']
                 ))->send();
+                break;
         }
     }
 }
