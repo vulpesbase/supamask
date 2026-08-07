@@ -12,6 +12,13 @@ Supamask::boot([
             '127.0.0.1',
         ],
     ],
+
+    'responses' => [
+        'deny' => [
+            'status' => 403,
+            'body' => 'Request blocked by Supamask.',
+        ],
+    ],
 ]);
 
 echo "Hello World!";

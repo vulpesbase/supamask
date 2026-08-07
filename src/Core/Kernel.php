@@ -81,15 +81,31 @@ class Kernel
                 return;
 
             case Decision::CHALLENGE:
+                $response = $this->config->get(
+                    'responses.challenge',
+                    [
+                        'status' => 403,
+                        'body' => 'Challenge',
+                    ]
+                );
+
                 (new Response(
-                    403,
-                    'Challenge'
+                    $response['status'],
+                    $response['body']
                 ))->send();
 
             case Decision::DENY:
+                $response = $this->config->get(
+                    'responses.deny',
+                    [
+                        'status' => 403,
+                        'body' => 'Access denied',
+                    ]
+                );
+
                 (new Response(
-                    403,
-                    'Access denied'
+                    $response['status'],
+                    $response['body']
                 ))->send();
         }
     }
