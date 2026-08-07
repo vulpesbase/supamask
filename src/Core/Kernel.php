@@ -86,12 +86,14 @@ class Kernel
                     [
                         'status' => 403,
                         'body' => 'Challenge',
+                        'headers' => [],
                     ]
                 );
 
                 (new Response(
                     $response['status'],
-                    $response['body']
+                    $response['body'],
+                    $response['headers']
                 ))->send();
 
             case Decision::DENY:
@@ -100,12 +102,14 @@ class Kernel
                     [
                         'status' => 403,
                         'body' => 'Access denied',
+                        'headers' => [],
                     ]
                 );
 
                 (new Response(
                     $response['status'],
-                    $response['body']
+                    $response['body'],
+                    $response['headers']
                 ))->send();
         }
     }

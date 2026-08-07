@@ -17,6 +17,10 @@ Supamask::boot([
         'deny' => [
             'status' => 403,
             'body' => 'Request blocked by Supamask.',
+            'headers' => [
+                'Content-Type' => 'text/plain',
+                'X-Supamask-Decision' => 'deny',
+            ],
         ],
     ],
 ]);
