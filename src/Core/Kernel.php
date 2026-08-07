@@ -3,9 +3,11 @@
 namespace Supamask\Core;
 
 use Supamask\Http\Request;
+use Supamask\Middleware\BotBlockMiddleware;
 use Supamask\Middleware\IpBlockMiddleware;
 use Supamask\Middleware\Pipeline;
 use Supamask\Security\AntiRed;
+use Supamask\Security\BotMatcher;
 use Supamask\Security\CustomBlocklist;
 
 class Kernel
@@ -22,6 +24,9 @@ class Kernel
             $this->config
         );
 
+        /*
+         * AntiRed IP rules
+         */
         $antiRedRules = [];
 
         if ($this->config->get('ip_blocking.antired', true)) {
@@ -30,19 +35,45 @@ class Kernel
 
         $antiRed = new AntiRed($antiRedRules);
 
+        /*
+         * User-defined IP rules
+         */
         $customBlocklist = new CustomBlocklist(
             $this->config->get('ip_blocking.rules', [])
         );
 
+        /*
+         * AntiRed bot signatures
+         */
+        $botSignatures = [];
+
+        if ($this->config->get('ip_blocking.antired', true)) {
+            $botSignatures = require __DIR__ . '/../Security/Data/antired-bots.php';
+        }
+
+        $botMatcher = new BotMatcher($botSignatures);
+
+        /*
+         * Middleware pipeline
+         */
         $pipeline = new Pipeline();
 
-        $pipeline->pipe(
-            new IpBlockMiddleware(
-                $antiRed,
-                $customBlocklist
+        $pipeline
+            ->pipe(
+                new IpBlockMiddleware(
+                    $antiRed,
+                    $customBlocklist
+                )
             )
-        );
+            ->pipe(
+                new BotBlockMiddleware(
+                    $botMatcher
+                )
+            );
 
+        /*
+         * Process request
+         */
         $decision = $pipeline->process($context);
 
         switch ($decision) {
