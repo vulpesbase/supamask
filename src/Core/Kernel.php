@@ -3,6 +3,7 @@
 namespace Supamask\Core;
 
 use Supamask\Http\Request;
+use Supamask\Http\Response;
 use Supamask\Middleware\BotBlockMiddleware;
 use Supamask\Middleware\IpBlockMiddleware;
 use Supamask\Middleware\Pipeline;
@@ -14,8 +15,7 @@ class Kernel
 {
     public function __construct(
         private Config $config
-    ) {
-    }
+    ) {}
 
     public function handle(Request $request): void
     {
@@ -81,10 +81,16 @@ class Kernel
                 return;
 
             case Decision::CHALLENGE:
-                exit('Challenge');
+                (new Response(
+                    403,
+                    'Challenge'
+                ))->send();
 
             case Decision::DENY:
-                exit('Access denied');
+                (new Response(
+                    403,
+                    'Access denied'
+                ))->send();
         }
     }
 }

@@ -1,5 +1,9 @@
 <?php
 
 return [
-    'Chrome',
+    'bot',
+    'crawler',
+    'spider',
+    'scraper',
+    'headless',
 ];
