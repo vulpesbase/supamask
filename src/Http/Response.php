@@ -10,6 +10,21 @@ class Response
         private array $headers = []
     ) {}
 
+    public function status(): int
+    {
+        return $this->status;
+    }
+
+    public function body(): string
+    {
+        return $this->body;
+    }
+
+    public function headers(): array
+    {
+        return $this->headers;
+    }
+
     public function send(): never
     {
         http_response_code($this->status);

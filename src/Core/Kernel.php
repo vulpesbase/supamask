@@ -13,11 +13,14 @@ use Supamask\Security\CustomBlocklist;
 
 class Kernel
 {
+    protected string $antiRedPath = __DIR__ . '/../Security/Data/antired.php';
+    protected string $antiRedBotsPath = __DIR__ . '/../Security/Data/antired-bots.php';
+
     public function __construct(
         private Config $config
     ) {}
 
-    public function handle(Request $request): void
+    public function handle(Request $request): ?Response
     {
         $context = new Context(
             $request,
@@ -30,7 +33,7 @@ class Kernel
         $antiRedRules = [];
 
         if ($this->config->get('ip_blocking.antired', true)) {
-            $antiRedRules = require __DIR__ . '/../Security/Data/antired.php';
+            $antiRedRules = require $this->antiRedPath;
         }
 
         $antiRed = new AntiRed($antiRedRules);
@@ -48,7 +51,7 @@ class Kernel
         $botSignatures = [];
 
         if ($this->config->get('ip_blocking.antired', true)) {
-            $botSignatures = require __DIR__ . '/../Security/Data/antired-bots.php';
+            $botSignatures = require $this->antiRedBotsPath;
         }
 
         $botMatcher = new BotMatcher($botSignatures);
@@ -78,7 +81,7 @@ class Kernel
 
         switch ($decision) {
             case Decision::ALLOW:
-                return;
+                return null;
 
             case Decision::CHALLENGE:
                 $response = $this->config->get(
@@ -90,12 +93,11 @@ class Kernel
                     ]
                 );
 
-                (new Response(
+                return new Response(
                     $response['status'],
                     $response['body'],
                     $response['headers']
-                ))->send();
-                break;
+                );
 
             case Decision::DENY:
                 $response = $this->config->get(
@@ -107,12 +109,11 @@ class Kernel
                     ]
                 );
 
-                (new Response(
+                return new Response(
                     $response['status'],
                     $response['body'],
                     $response['headers']
-                ))->send();
-                break;
+                );
         }
     }
 }

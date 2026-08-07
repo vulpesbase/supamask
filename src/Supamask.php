@@ -14,8 +14,12 @@ class Supamask
             new Config($config)
         );
 
-        $kernel->handle(
+        $response = $kernel->handle(
             new Request()
         );
+
+        if ($response !== null) {
+            $response->send();
+        }
     }
 }
