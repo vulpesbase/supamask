@@ -6,8 +6,10 @@ use Supamask\Supamask;
 
 Supamask::boot([
     'ip_blocking' => [
+        'antired' => true,
+
         'ips' => [
-            '::1/128',
+            '203.0.113.10',
         ],
     ],
 ]);

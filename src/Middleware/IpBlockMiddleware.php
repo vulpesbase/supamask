@@ -10,26 +10,24 @@ use Supamask\Security\CustomBlocklist;
 
 class IpBlockMiddleware implements MiddlewareInterface
 {
-  public function handle(Context $context): Decision
-{
-    $ip = $context->request()->ip();
-
-    $antiRed = new AntiRed();
-
-    if ($antiRed->contains($ip)) {
-        return Decision::DENY;
+    public function __construct(
+        private AntiRed $antiRed,
+        private CustomBlocklist $customBlocklist
+    ) {
     }
 
-    $customIps = $context
-        ->config()
-        ->get('ip_blocking.ips', []);
+    public function handle(Context $context): Decision
+    {
+        $ip = $context->request()->ip();
 
-    $customBlocklist = new CustomBlocklist($customIps);
+        if ($this->antiRed->contains($ip)) {
+            return Decision::DENY;
+        }
 
-    if ($customBlocklist->contains($ip)) {
-        return Decision::DENY;
+        if ($this->customBlocklist->contains($ip)) {
+            return Decision::DENY;
+        }
+
+        return Decision::ALLOW;
     }
-
-    return Decision::ALLOW;
-}
 }

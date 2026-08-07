@@ -2,12 +2,11 @@
 
 namespace Supamask\Core;
 
-use Supamask\Core\Config;
-use Supamask\Core\Decision;
 use Supamask\Http\Request;
-use Supamask\Middleware\AllowMiddleware;
 use Supamask\Middleware\IpBlockMiddleware;
 use Supamask\Middleware\Pipeline;
+use Supamask\Security\AntiRed;
+use Supamask\Security\CustomBlocklist;
 
 class Kernel
 {
@@ -18,18 +17,33 @@ class Kernel
 
     public function handle(Request $request): void
     {
+        $context = new Context(
+            $request,
+            $this->config
+        );
+
+        $antiRedRules = [];
+
+        if ($this->config->get('ip_blocking.antired', true)) {
+            $antiRedRules = require __DIR__ . '/../Security/Data/antired.php';
+        }
+
+        $antiRed = new AntiRed($antiRedRules);
+
+        $customBlocklist = new CustomBlocklist(
+            $this->config->get('ip_blocking.ips', [])
+        );
+
         $pipeline = new Pipeline();
 
         $pipeline->pipe(
-    new IpBlockMiddleware()
-);
+            new IpBlockMiddleware(
+                $antiRed,
+                $customBlocklist
+            )
+        );
 
-        $context = new Context(
-    $request,
-    $this->config
-);
-
-$decision = $pipeline->process($context);
+        $decision = $pipeline->process($context);
 
         switch ($decision) {
             case Decision::ALLOW:
