@@ -1,5 +1,6 @@
 <?php
 
 return [
-    // AntiRed rules will live here.
+    '127.0.0.1',
+    '192.0.2.0/24',
 ];

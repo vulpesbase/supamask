@@ -31,7 +31,7 @@ class Kernel
         $antiRed = new AntiRed($antiRedRules);
 
         $customBlocklist = new CustomBlocklist(
-            $this->config->get('ip_blocking.ips', [])
+            $this->config->get('ip_blocking.rules', [])
         );
 
         $pipeline = new Pipeline();
