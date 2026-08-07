@@ -1,8 +1,16 @@
 {
   "name": "devgonerogue/supamask",
-  "description": "The ultimate cloaking framework for PHP.",
+  "description": "A lightweight PHP middleware library for IP and bot blocking.",
   "type": "library",
   "license": "MIT",
+  "homepage": "https://github.com/vulpesbase/supamask",
+  "keywords": [
+    "php",
+    "middleware",
+    "security",
+    "ip-blocking",
+    "bot-blocking"
+  ],
   "autoload": {
     "psr-4": {
       "Supamask\\": "src/"
