@@ -6,4 +6,4 @@ use Supamask\Supamask;
 
 Supamask::boot();
 
-echo "Hello, World!";
+echo "Hello World";
