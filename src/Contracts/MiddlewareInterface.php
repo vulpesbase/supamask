@@ -2,10 +2,10 @@
 
 namespace Supamask\Contracts;
 
-use Supamask\Http\Request;
+use Supamask\Core\Context;
 use Supamask\Core\Decision;
 
 interface MiddlewareInterface
 {
-    public function handle(Request $request): Decision;
+    public function handle(Context $context): Decision;
 }

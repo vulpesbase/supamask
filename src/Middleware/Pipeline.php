@@ -3,7 +3,7 @@
 namespace Supamask\Middleware;
 
 use Supamask\Contracts\MiddlewareInterface;
-use Supamask\Http\Request;
+use Supamask\Core\Context;
 use Supamask\Core\Decision;
 
 class Pipeline
@@ -20,10 +20,10 @@ class Pipeline
         return $this;
     }
 
-    public function process(Request $request): Decision
+    public function process(Context $context): Decision
     {
         foreach ($this->middleware as $middleware) {
-            $decision = $middleware->handle($request);
+            $decision = $middleware->handle($context);
 
             if ($decision !== Decision::ALLOW) {
                 return $decision;

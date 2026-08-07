@@ -23,7 +23,12 @@ class Kernel
             new AllowMiddleware()
         );
 
-        $decision = $pipeline->process($request);
+        $context = new Context(
+    $request,
+    $this->config
+);
+
+$decision = $pipeline->process($context);
 
         switch ($decision) {
             case Decision::ALLOW:
