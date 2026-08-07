@@ -6,6 +6,7 @@ use Supamask\Core\Config;
 use Supamask\Core\Decision;
 use Supamask\Http\Request;
 use Supamask\Middleware\AllowMiddleware;
+use Supamask\Middleware\IpBlockMiddleware;
 use Supamask\Middleware\Pipeline;
 
 class Kernel
@@ -20,8 +21,8 @@ class Kernel
         $pipeline = new Pipeline();
 
         $pipeline->pipe(
-            new AllowMiddleware()
-        );
+    new IpBlockMiddleware()
+);
 
         $context = new Context(
     $request,
