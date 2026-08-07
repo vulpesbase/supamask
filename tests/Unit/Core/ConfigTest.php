@@ -14,6 +14,27 @@ class ConfigTest extends TestCase
         $this->assertTrue($config->get('debug'));
     }
 
+    public function testDefaultSecurityConfigurationShapeIsApplied(): void
+    {
+        $config = new Config([]);
+
+        $this->assertTrue($config->get('ip_blocking.enabled'));
+        $this->assertTrue($config->get('ip_blocking.antired'));
+        $this->assertSame([], $config->get('ip_blocking.rules'));
+
+        $this->assertTrue($config->get('bot_blocking.enabled'));
+        $this->assertTrue($config->get('bot_blocking.antired'));
+        $this->assertSame([], $config->get('bot_blocking.signatures'));
+
+        $this->assertSame(403, $config->get('responses.deny.status'));
+        $this->assertSame('Access denied', $config->get('responses.deny.body'));
+        $this->assertSame([], $config->get('responses.deny.headers'));
+
+        $this->assertSame(403, $config->get('responses.challenge.status'));
+        $this->assertSame('Challenge', $config->get('responses.challenge.body'));
+        $this->assertSame([], $config->get('responses.challenge.headers'));
+    }
+
     public function testGetNestedValue(): void
     {
         $config = new Config([
@@ -86,7 +107,7 @@ class ConfigTest extends TestCase
             ],
         ]);
 
-        $expected = ['status' => 403, 'body' => 'Denied'];
+        $expected = ['status' => 403, 'body' => 'Denied', 'headers' => []];
         $this->assertSame($expected, $config->get('responses.deny'));
     }
 }

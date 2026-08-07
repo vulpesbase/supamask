@@ -17,7 +17,7 @@ class Kernel
     protected string $antiRedBotsPath = __DIR__ . '/../Security/Data/antired-bots.php';
 
     public function __construct(
-        private Config $config
+        protected Config $config
     ) {}
 
     public function handle(Request $request): ?Response
@@ -27,52 +27,44 @@ class Kernel
             $this->config
         );
 
-        /*
-         * AntiRed IP rules
-         */
-        $antiRedRules = [];
-
-        if ($this->config->get('ip_blocking.antired', true)) {
-            $antiRedRules = require $this->antiRedPath;
-        }
-
-        $antiRed = new AntiRed($antiRedRules);
-
-        /*
-         * User-defined IP rules
-         */
-        $customBlocklist = new CustomBlocklist(
-            $this->config->get('ip_blocking.rules', [])
-        );
-
-        /*
-         * AntiRed bot signatures
-         */
-        $botSignatures = [];
-
-        if ($this->config->get('ip_blocking.antired', true)) {
-            $botSignatures = require $this->antiRedBotsPath;
-        }
-
-        $botMatcher = new BotMatcher($botSignatures);
-
-        /*
-         * Middleware pipeline
-         */
         $pipeline = new Pipeline();
 
-        $pipeline
-            ->pipe(
-                new IpBlockMiddleware(
-                    $antiRed,
-                    $customBlocklist
-                )
-            )
-            ->pipe(
-                new BotBlockMiddleware(
-                    $botMatcher
-                )
+        // IP Blocking
+        if ($this->config->get('ip_blocking.enabled', true)) {
+            $antiRedRules = [];
+
+            if ($this->config->get('ip_blocking.antired', true)) {
+                $antiRedRules = require $this->antiRedPath;
+            }
+
+            $antiRed = new AntiRed($antiRedRules);
+
+            $customBlocklist = new CustomBlocklist(
+                $this->config->get('ip_blocking.rules', [])
             );
+
+            $pipeline->pipe(new IpBlockMiddleware($antiRed, $customBlocklist));
+        }
+
+        // Bot Blocking
+        if ($this->config->get('bot_blocking.enabled', true)) {
+            $botSignatures = [];
+
+            // Fallback to ip_blocking.antired if bot_blocking.antired is not set, for BC
+            $botAntired = $this->config->has('bot_blocking.antired')
+                ? $this->config->get('bot_blocking.antired')
+                : $this->config->get('ip_blocking.antired', true);
+            if ($botAntired) {
+                $botSignatures = require $this->antiRedBotsPath;
+            }
+
+            $customSignatures = $this->config->get('bot_blocking.signatures', []);
+            $allSignatures = array_merge($botSignatures, $customSignatures);
+
+            $botMatcher = new BotMatcher($allSignatures);
+
+            $pipeline->pipe(new BotBlockMiddleware($botMatcher));
+        }
 
         /*
          * Process request

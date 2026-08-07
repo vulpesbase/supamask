@@ -3,9 +3,14 @@
 namespace Supamask\Tests\Integration;
 
 use PHPUnit\Framework\TestCase;
+use Supamask\Contracts\MiddlewareInterface;
 use Supamask\Core\Config;
+use Supamask\Core\Context;
+use Supamask\Core\Decision;
 use Supamask\Core\Kernel;
 use Supamask\Http\Request;
+use Supamask\Http\Response;
+use Supamask\Middleware\Pipeline;
 
 class SecurityFlowTest extends TestCase
 {
@@ -26,12 +31,18 @@ class SecurityFlowTest extends TestCase
     {
         return [
             'ip_blocking' => [
+                'enabled' => true,
                 'antired' => true,
                 'rules' => [
                     '198.51.100.1', // Custom exact
                     '203.0.113.0/24', // Custom IPv4 CIDR
                     '2001:db8:1234::/48', // Custom IPv6 CIDR
                 ],
+            ],
+            'bot_blocking' => [
+                'enabled' => true,
+                'antired' => true,
+                'signatures' => [],
             ],
             'responses' => [
                 'deny' => [
@@ -156,17 +167,54 @@ class SecurityFlowTest extends TestCase
 
     // 4. Configuration
 
-    public function testConfigurationAntiRedEnabled(): void
+    public function testIpBlockingDisabledAllowsIp(): void
     {
-        $kernel = $this->createKernel(['ip_blocking' => ['antired' => true]]);
-        $this->assertDenyResponse($kernel, $this->createRequest('192.0.2.100'));
+        $kernel = $this->createKernel(['ip_blocking' => ['enabled' => false]]);
+        $this->assertAllowResponse($kernel, $this->createRequest('192.0.2.100'));
     }
 
-    public function testConfigurationAntiRedDisabled(): void
+    public function testBotBlockingDisabledAllowsBot(): void
+    {
+        $kernel = $this->createKernel(['bot_blocking' => ['enabled' => false]]);
+        $this->assertAllowResponse($kernel, $this->createRequest('192.168.1.1', 'EvilBot'));
+    }
+
+    public function testIpBlockingAntiRedDisabledAllowsAntiRedIp(): void
     {
         $kernel = $this->createKernel(['ip_blocking' => ['antired' => false]]);
-        // With AntiRed disabled, the AntiRed IP and Bot rules should be ignored.
-        $this->assertAllowResponse($kernel, $this->createRequest('192.0.2.100', 'EvilBot'));
+        $this->assertAllowResponse($kernel, $this->createRequest('192.0.2.100'));
+    }
+
+    public function testBotBlockingAntiRedDisabledAllowsAntiRedBot(): void
+    {
+        $kernel = $this->createKernel(['bot_blocking' => ['antired' => false]]);
+        $this->assertAllowResponse($kernel, $this->createRequest('192.168.1.1', 'EvilBot'));
+    }
+
+    public function testBotBlockingCustomSignaturesAreRespected(): void
+    {
+        $kernel = $this->createKernel(['bot_blocking' => ['signatures' => ['CustomBadBot']]]);
+        $this->assertDenyResponse($kernel, $this->createRequest('192.168.1.1', 'Mozilla/5.0 (CustomBadBot/2.0)'));
+    }
+
+    public function testBackwardsCompatibilityIpAntiRedDisablesBotAntiRedIfBotConfigMissing(): void
+    {
+        // Old configs won't have bot_blocking at all.
+        $config = new Config([
+            'ip_blocking' => ['antired' => false],
+            'responses' => ['deny' => ['status' => 403, 'body' => 'Denied', 'headers' => []]]
+        ]);
+        
+        $kernel = new class($config) extends Kernel {
+            public function __construct(Config $config)
+            {
+                parent::__construct($config);
+                $this->antiRedPath = __DIR__ . '/Fixtures/antired.php';
+                $this->antiRedBotsPath = __DIR__ . '/Fixtures/antired-bots.php';
+            }
+        };
+
+        $this->assertAllowResponse($kernel, $this->createRequest('192.168.1.1', 'EvilBot'));
     }
 
     public function testConfigurationCustomRulesAreRespected(): void
@@ -217,5 +265,71 @@ class SecurityFlowTest extends TestCase
             'Custom Body',
             ['X-Custom' => 'Value']
         );
+    }
+
+    public function testHttpResponsesChallengeProducesConfiguredStatusCodeAndBodyAndHeaders(): void
+    {
+        $config = new Config(array_replace_recursive($this->getBaseConfigArray(), [
+            'responses' => [
+                'challenge' => [
+                    'status' => 429,
+                    'body' => 'Slow down',
+                    'headers' => ['X-Rate-Limit' => '1'],
+                ]
+            ]
+        ]));
+
+        $kernel = new class($config) extends Kernel {
+            public function __construct(Config $config)
+            {
+                parent::__construct($config);
+                $this->antiRedPath = __DIR__ . '/Fixtures/antired.php';
+                $this->antiRedBotsPath = __DIR__ . '/Fixtures/antired-bots.php';
+            }
+
+            public function handle(Request $request): ?Response
+            {
+                $context = new Context($request, $this->config);
+                $pipeline = new Pipeline();
+                $pipeline->pipe(new class implements MiddlewareInterface {
+                    public function handle(Context $context): Decision
+                    {
+                        return Decision::CHALLENGE;
+                    }
+                });
+
+                $decision = $pipeline->process($context);
+
+                switch ($decision) {
+                    case Decision::ALLOW:
+                        return null;
+
+                    case Decision::CHALLENGE:
+                        $response = $this->config->get('responses.challenge', [
+                            'status' => 403,
+                            'body' => 'Challenge',
+                            'headers' => [],
+                        ]);
+
+                        return new Response($response['status'], $response['body'], $response['headers']);
+
+                    case Decision::DENY:
+                        $response = $this->config->get('responses.deny', [
+                            'status' => 403,
+                            'body' => 'Access denied',
+                            'headers' => [],
+                        ]);
+
+                        return new Response($response['status'], $response['body'], $response['headers']);
+                }
+            }
+        };
+
+        $response = $kernel->handle($this->createRequest('192.168.1.1', 'EvilBot'));
+
+        $this->assertNotNull($response);
+        $this->assertSame(429, $response->status());
+        $this->assertSame('Slow down', $response->body());
+        $this->assertSame(['X-Rate-Limit' => '1'], $response->headers());
     }
 }
