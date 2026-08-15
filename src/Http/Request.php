@@ -36,10 +36,48 @@ class Request
         return $this->server['HTTP_USER_AGENT'] ?? '';
     }
 
+    public function referrer(): ?string
+    {
+        return $this->server['HTTP_REFERER'] ?? null;
+    }
+
     public function header(string $name): ?string
     {
         $key = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
 
         return $this->server[$key] ?? null;
     }
+
+    public function input(string $name, mixed $default = null): mixed
+    {
+        return $_POST[$name] ?? $default;
+    }
+    public function scheme(): string
+    {
+        if (($this->server['HTTPS'] ?? '') !== '' && strtolower((string) $this->server['HTTPS']) !== 'off') {
+            return 'https';
+        }
+
+        return strtolower((string) ($this->server['REQUEST_SCHEME'] ?? 'http'));
+    }
+
+    /** @return array<string, string> */
+    public function headers(): array
+    {
+        $headers = [];
+
+        foreach ($this->server as $key => $value) {
+            if (!is_string($value)) {
+                continue;
+            }
+
+            if (str_starts_with($key, 'HTTP_')) {
+                $name = strtolower(str_replace('_', '-', substr($key, 5)));
+                $headers[$name] = $value;
+            }
+        }
+
+        return $headers;
+    }
+
 }
