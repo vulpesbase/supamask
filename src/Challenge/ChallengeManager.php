@@ -71,6 +71,19 @@ final class ChallengeManager
         return $this->verificationTtl;
     }
 
+    /**
+     * Returns existing state for presentation restart decisions only.
+     * Callers must never use this to authenticate or consume a challenge.
+     */
+    public function find(string $id): ?Challenge
+    {
+        if (!preg_match('/^[a-f0-9]{12}$/', $id)) {
+            return null;
+        }
+
+        return $this->store->find($id);
+    }
+
     private function findPending(string $id, ?DateTimeImmutable $now = null): Challenge
     {
         if (!preg_match('/^[a-f0-9]{12}$/', $id)) {

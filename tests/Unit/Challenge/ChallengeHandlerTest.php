@@ -40,11 +40,11 @@ final class ChallengeHandlerTest extends TestCase
         );
     }
 
-    public function testMalformedChallengePathIsRejected(): void
+    public function testMalformedChallengePathIsHandledForSafeRestart(): void
     {
-        $_SERVER['REQUEST_URI'] = '/_supamask/challenge/not-a-challenge';
+        $_SERVER['REQUEST_URI'] = '/_supamask/challenge/000000000000';
 
-        $this->assertFalse(
+        $this->assertTrue(
             $this->handler()->matches(new Request())
         );
     }

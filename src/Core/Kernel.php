@@ -5,7 +5,7 @@ namespace Supamask\Core;
 use RuntimeException;
 use Supamask\Challenge\ChallengeHandler;
 use Supamask\Challenge\ChallengePresentationInterface;
-use Supamask\Challenge\DefaultChallengePresentation;
+use Supamask\Challenge\Presentation\PolymorphicChallengePresentation;
 use Supamask\Challenge\ChallengeManager;
 use Supamask\Challenge\SessionChallengeStore;
 use Supamask\Challenge\SessionVerification;
@@ -70,7 +70,7 @@ class Kernel
         $presentation = $this->config->get('challenge.presentation.handler');
 
         if (!$presentation instanceof ChallengePresentationInterface) {
-            $presentation = new DefaultChallengePresentation();
+            $presentation = new PolymorphicChallengePresentation();
         }
 
         // Create or inject a single, shared DisposableEntryManager instance.

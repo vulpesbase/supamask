@@ -47,7 +47,7 @@ class ChallengeFlowTest extends TestCase
         $this->assertNotNull($response);
         $this->assertSame(302, $response->status());
         $this->assertMatchesRegularExpression(
-            '#^/_supamask/challenge/[a-f0-9]{12}$#',
+            '#^/[a-f0-9]{12}$#',
             $response->headers()['Location']
         );
         $this->assertCount(1, $this->getStoredChallenges());
@@ -56,7 +56,7 @@ class ChallengeFlowTest extends TestCase
     public function testChallengeRouteRendersPendingChallenge(): void
     {
         $challenge = (new ChallengeManager($this->store))->create('/pricing');
-        $_SERVER['REQUEST_URI'] = '/_supamask/challenge/' . $challenge->id();
+        $_SERVER['REQUEST_URI'] = '/' . $challenge->id();
         $_SERVER['REQUEST_METHOD'] = 'GET';
 
         $response = $this->kernel->handle(new Request());
@@ -71,7 +71,7 @@ class ChallengeFlowTest extends TestCase
     public function testPostConsumesChallengeAndRedirectsToOriginalUri(): void
     {
         $challenge = (new ChallengeManager($this->store))->create('/pricing?plan=pro');
-        $_SERVER['REQUEST_URI'] = '/_supamask/challenge/' . $challenge->id();
+        $_SERVER['REQUEST_URI'] = '/' . $challenge->id();
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['token' => $challenge->verificationToken()];
 
@@ -89,7 +89,7 @@ class ChallengeFlowTest extends TestCase
         $challengeManager = new ChallengeManager($this->store);
         $challengeManager->consume($challenge->id(), $challenge->verificationToken());
 
-        $_SERVER['REQUEST_URI'] = '/_supamask/challenge/' . $challenge->id();
+        $_SERVER['REQUEST_URI'] = '/' . $challenge->id();
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['token' => $challenge->verificationToken()];
 

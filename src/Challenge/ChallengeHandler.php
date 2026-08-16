@@ -24,11 +24,25 @@ final class ChallengeHandler
         $path = parse_url($request->uri(), PHP_URL_PATH);
         $prefix = $this->path();
 
-        return is_string($path)
-            && preg_match(
-                '#^' . preg_quote($prefix, '#') . '([a-f0-9]{12})/?$#',
-                $path
-            ) === 1;
+        if (!is_string($path)) {
+            return false;
+        }
+
+        if (preg_match('#^' . preg_quote($prefix, '#') . '([a-f0-9]{12})/?$#', $path, $matches) !== 1) {
+            return false;
+        }
+
+        $id = $matches[1];
+
+        // Disposable entries share the same 12-hex format and root-level namespace.
+        // If this ID corresponds to any disposable entry (active, consumed, or expired),
+        // we must NOT intercept it here. It must fall through to EntryClassification
+        // so its strict lifecycle (e.g. 410 Gone) is enforced.
+        if ($this->disposableEntryManager !== null && $this->disposableEntryManager->find($id) !== null) {
+            return false;
+        }
+
+        return true;
     }
 
     public function handle(Request $request): Response
@@ -56,6 +70,10 @@ final class ChallengeHandler
                 $this->noStoreHeaders('text/html; charset=UTF-8'),
             );
         } catch (RuntimeException) {
+            if ($request->method() === 'GET') {
+                return $this->restartPresentation($id);
+            }
+
             return new Response(404, 'Challenge not found or expired.', [
                 'Content-Type' => 'text/plain; charset=UTF-8',
                 'Cache-Control' => 'no-store',
@@ -142,12 +160,44 @@ final class ChallengeHandler
 
     private function path(): string
     {
-        $path = (string) $this->config->get(
-            'challenge.path',
-            '/_supamask/challenge/'
-        );
+        // presentation_path is the new explicit browser-facing route. Honor
+        // an explicitly configured legacy path for integrations that opted
+        // into their own route before this setting existed.
+        $path = $this->config->has('challenge.presentation_path')
+            ? (string) $this->config->get('challenge.presentation_path')
+            : ($this->config->has('challenge.path')
+                ? (string) $this->config->get('challenge.path')
+                : '/');
 
-        return '/' . trim($path, '/') . '/';
+        $trimmed = trim($path, '/');
+        return $trimmed === '' ? '/' : '/' . $trimmed . '/';
+    }
+
+    /**
+     * Starts a new presentation challenge after an invalid GET request.
+     *
+     * A restart never revives the rejected challenge. Entry-bound challenges
+     * are excluded because their disposable-entry lifecycle remains
+     * authoritative and may require a 410 response.
+     */
+    private function restartPresentation(string $id): Response
+    {
+        $previous = $this->manager->find($id);
+
+        if ($previous !== null && $previous->entrySlug() !== null) {
+            return new Response(410, 'Gone.', [
+                'Content-Type' => 'text/plain; charset=UTF-8',
+                'Cache-Control' => 'no-store',
+            ]);
+        }
+
+        $destination = $previous?->originalUri() ?? '/';
+        $challenge = $this->manager->create($destination);
+
+        return new Response(302, '', [
+            'Location' => $this->path() . $challenge->id(),
+            'Cache-Control' => 'no-store',
+        ]);
     }
 
     private function safeOriginalUri(Request $request): string

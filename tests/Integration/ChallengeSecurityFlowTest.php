@@ -95,7 +95,7 @@ final class ChallengeSecurityFlowTest extends TestCase
         $id = basename($response->headers()['Location']);
         $challenge = $this->store->find($id);
 
-        $_SERVER['REQUEST_URI'] = '/_supamask/challenge/' . $id;
+        $_SERVER['REQUEST_URI'] = '/' . $id;
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['token' => str_repeat('0', 64)];
 

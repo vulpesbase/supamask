@@ -5,24 +5,28 @@ require __DIR__ . '/../../vendor/autoload.php';
 use Supamask\Supamask;
 
 Supamask::boot([
-    'ip_blocking' => [
-        'antired' => true,
-
-        'rules' => [
-            '127.0.0.1',
+    'challenge' => [
+        'middleware' => [
+            'enabled' => true,
+        ],
+        'protection' => [
+            'enabled' => true,
         ],
     ],
 
-    'responses' => [
-        'deny' => [
-            'status' => 403,
-            'body' => 'Request blocked by Supamask.',
-            'headers' => [
-                'Content-Type' => 'text/plain',
-                'X-Supamask-Decision' => 'deny',
-            ],
+    'routing' => [
+        'root' => [
+            'behavior' => 'challenge',
         ],
+    ],
+
+    'ip_blocking' => [
+        'enabled' => false,
+    ],
+
+    'bot_blocking' => [
+        'enabled' => false,
     ],
 ]);
 
-echo "Hello World!";
+echo 'Hello World';

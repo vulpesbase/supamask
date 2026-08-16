@@ -22,6 +22,9 @@ class Config
             'ttl' => 300,
             'verification_ttl' => 1800,
             'path' => '/_supamask/challenge/',
+            // Internal legacy plumbing path. Challenge pages are served from
+            // the explicit user-facing presentation route below.
+            'presentation_path' => '/',
             'middleware' => [
                 'enabled' => false,
             ],
