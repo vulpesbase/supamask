@@ -70,7 +70,7 @@ final class KernelPolymorphicPresentationTest extends TestCase
         $this->assertStringContainsString('<form method="post"', $firstHtml);
         $this->assertSame(1, substr_count($firstHtml, 'type="submit"') + substr_count($firstHtml, 'type=submit'));
         $this->assertStringContainsString('name="token"', $firstHtml);
-        $this->assertStringContainsString('<span>Continue</span></button>', $firstHtml);
+        $this->assertStringContainsString('</button>', $firstHtml);
         $this->assertMatchesRegularExpression('/class="[a-z][a-z0-9]{15}"/', $firstHtml);
         $this->assertStringNotContainsString('supamask-', $firstHtml);
         $this->assertTrue(

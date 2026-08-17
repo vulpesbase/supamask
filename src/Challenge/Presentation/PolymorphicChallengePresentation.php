@@ -55,13 +55,28 @@ final class PolymorphicChallengePresentation implements ChallengePresentationInt
             );
         }
 
-        // If overrides are provided, use them (for testing/config-based customization)
+        // If overrides are provided, use them (for testing/config-based customization).
         if ($this->hasOverrides($context)) {
-            return $this->presenter->presentWithOverrides($challengeId, $token, $action, $context);
+            $html = $this->presenter->presentWithOverrides($challengeId, $token, $action, $context);
+        } else {
+            $html = $this->presenter->present($challengeId, $token, $action);
         }
 
-        // Otherwise use the polymorphic presenter with random variant and copy
-        return $this->presenter->present($challengeId, $token, $action);
+        $state = isset($context['state']) ? (string) $context['state'] : 'challenge';
+        $enhanced = ChallengeStateEnhancer::enhance(
+            $html,
+            $state,
+            isset($context['redirect']) ? (string) $context['redirect'] : null,
+        );
+
+        // The success response has already been rendered with the original
+        // challenge variant. It is now safe to release the presentation-only
+        // session mapping; the consumed challenge cannot be rendered again.
+        if ($state === 'success') {
+            $this->presenter->forgetVariant($challengeId);
+        }
+
+        return $enhanced;
     }
 
     /**
@@ -71,6 +86,7 @@ final class PolymorphicChallengePresentation implements ChallengePresentationInt
     {
         return $this->presenter;
     }
+
 
     /**
      * Checks if context contains override values.
@@ -82,7 +98,8 @@ final class PolymorphicChallengePresentation implements ChallengePresentationInt
         return isset($context['title']) ||
                isset($context['heading']) ||
                isset($context['message']) ||
-               isset($context['button']);
+               isset($context['button']) ||
+               isset($context['trust_footer']);
     }
 
 }

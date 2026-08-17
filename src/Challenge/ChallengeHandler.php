@@ -51,7 +51,19 @@ final class ChallengeHandler
 
         try {
             if ($request->method() === 'POST') {
-                return $this->verify($request, $id);
+                try {
+                    return $this->verify($request, $id);
+                } catch (RuntimeException) {
+                    // Invalid verification attempts do not consume a pending challenge.
+                    // Keep the same challenge available and render its retry state.
+                    $challenge = $this->manager->inspect($id);
+
+                    return new Response(
+                        200,
+                        $this->render($challenge->id(), $challenge->verificationToken(), 'retry'),
+                        $this->noStoreHeaders('text/html; charset=UTF-8'),
+                    );
+                }
             }
 
             if ($request->method() !== 'GET') {
@@ -144,10 +156,11 @@ final class ChallengeHandler
 
         $this->verification->markVerified($this->manager->verificationTtl());
 
-        return new Response(302, '', [
-            'Location' => $challenge->originalUri(),
-            'Cache-Control' => 'no-store',
-        ]);
+        return new Response(
+            200,
+            $this->render($challenge->id(), $challenge->verificationToken(), 'success', $challenge->originalUri()),
+            $this->noStoreHeaders('text/html; charset=UTF-8'),
+        );
     }
 
     private function challengeId(Request $request): string
@@ -211,20 +224,28 @@ final class ChallengeHandler
         return $uri;
     }
 
-    private function render(string $id, string $token): string
+    private function render(string $id, string $token, string $state = 'challenge', ?string $redirect = null): string
     {
         $presentation = $this->config->get('challenge.presentation', []);
 
-        return $this->presentation->render([
+        $context = [
             'id' => $id,
             'token' => $token,
             'action' => $this->path() . $id,
-            'title' => $presentation['title'] ?? 'Security verification',
-            'heading' => $presentation['heading'] ?? 'Security verification',
-            'message' => $presentation['message']
-                ?? 'Please confirm to continue to the requested page.',
-            'button' => $presentation['button'] ?? 'Continue',
-        ]);
+            'state' => $state,
+        ];
+
+        if ($redirect !== null) {
+            $context['redirect'] = $redirect;
+        }
+
+        foreach (['title', 'heading', 'message', 'button', 'trust_footer'] as $key) {
+            if (isset($presentation[$key])) {
+                $context[$key] = $presentation[$key];
+            }
+        }
+
+        return $this->presentation->render($context);
     }
 
     private function noStoreHeaders(string $contentType): array

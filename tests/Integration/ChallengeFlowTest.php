@@ -60,12 +60,13 @@ class ChallengeFlowTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'GET';
 
         $response = $this->kernel->handle(new Request());
+        $body = $response->body();
 
         $this->assertNotNull($response);
         $this->assertSame(200, $response->status());
-        $this->assertStringContainsString('Security verification', $response->body());
-        $this->assertStringContainsString('<form', $response->body());
-        $this->assertStringContainsString($challenge->verificationToken(), $response->body());
+        $this->assertStringContainsString('<title>', $body);
+        $this->assertStringContainsString('<form method="post"', $body);
+        $this->assertStringContainsString($challenge->verificationToken(), $body);
     }
 
     public function testPostConsumesChallengeAndRedirectsToOriginalUri(): void

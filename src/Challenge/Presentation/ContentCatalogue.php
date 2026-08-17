@@ -59,6 +59,22 @@ final class ContentCatalogue
     /**
      * Trust/security footer messages
      */
+    private const CHECKING_LABELS = [
+        'Checking...',
+        'Working...',
+        'Validating...',
+        'Confirming...',
+        'Verifying...',
+    ];
+
+    /**
+     * Button labels used after successful verification.
+     */
+    private const SUCCESS_LABELS = [
+        'Success',
+        'Verified',
+    ];
+
     private const TRUST_FOOTERS = [
         'Privacy first',
         'TLS secured',
@@ -155,6 +171,28 @@ final class ContentCatalogue
     public static function randomTrustFooter(): string
     {
         return self::selectRandom(self::TRUST_FOOTERS);
+    }
+
+    /** @return array<int, string> */
+    public static function allCheckingLabels(): array
+    {
+        return self::CHECKING_LABELS;
+    }
+
+    public static function randomCheckingLabel(): string
+    {
+        return self::selectRandom(self::CHECKING_LABELS);
+    }
+
+    /** @return array<int, string> */
+    public static function allSuccessLabels(): array
+    {
+        return self::SUCCESS_LABELS;
+    }
+
+    public static function randomSuccessLabel(): string
+    {
+        return self::selectRandom(self::SUCCESS_LABELS);
     }
 
     /**

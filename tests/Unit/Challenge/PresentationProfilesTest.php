@@ -25,7 +25,7 @@ final class PresentationProfilesTest extends TestCase
 
     /** @dataProvider profileProvider */
     #[DataProvider('profileProvider')]
-    public function testEveryReferenceProfileRenders(string $profile, string $expectedHeading, string $expectedTrust): void
+    public function testEveryReferenceProfileRenders(string $profile): void
     {
         $presenter = new ChallengePresenter();
         $presenter->setEnabledVariants([$profile]);
@@ -34,23 +34,42 @@ final class PresentationProfilesTest extends TestCase
 
         $this->assertStringContainsString('<title>', $html);
         $this->assertStringContainsString('<h1', $html);
-        $this->assertStringContainsString(htmlspecialchars($expectedHeading, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), $html);
-        $this->assertStringContainsString(htmlspecialchars($expectedTrust, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), $html);
         $this->assertSame(1, substr_count($html, 'type="submit"'));
         $this->assertStringContainsString('name="token"', $html);
         $this->assertStringContainsString(str_repeat('a', 64), $html);
+
+        $headings = array_map(fn($h) => htmlspecialchars($h, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), \Supamask\Challenge\Presentation\ContentCatalogue::allHeadings());
+        $trusts = array_map(fn($t) => htmlspecialchars($t, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), \Supamask\Challenge\Presentation\ContentCatalogue::allTrustFooters());
+
+        $hasHeading = false;
+        foreach ($headings as $heading) {
+            if (str_contains($html, $heading)) {
+                $hasHeading = true;
+                break;
+            }
+        }
+        $this->assertTrue($hasHeading, 'HTML must contain one of the random headings');
+
+        $hasTrust = false;
+        foreach ($trusts as $trust) {
+            if (str_contains($html, $trust)) {
+                $hasTrust = true;
+                break;
+            }
+        }
+        $this->assertTrue($hasTrust, 'HTML must contain one of the random trust footers');
     }
 
     public static function profileProvider(): array
     {
         return [
-            ['branded-confirm', 'Confirm you are human', 'Privacy first'],
-            ['compact-icon-confirm', 'Confirm you are human', 'Secure gate'],
-            ['compact-secure', 'Secure continue', 'TLS secured'],
-            ['compact-quick', 'Quick security check', 'Encrypted session'],
-            ['compact-almost', 'Almost there', 'Privacy first'],
-            ['branded-one-more', 'One more step', 'Privacy first'],
-            ['branded-protected', 'One more step', 'TLS secured'],
+            ['branded-confirm'],
+            ['compact-icon-confirm'],
+            ['compact-secure'],
+            ['compact-quick'],
+            ['compact-almost'],
+            ['branded-one-more'],
+            ['branded-protected'],
         ];
     }
 

@@ -37,10 +37,12 @@ final class ChallengePresenter
     private array $defaultVariants = [];
 
     private PresentationIdentifierGenerator $identifierGenerator;
+    private PresentationVariantStore $variantStore;
 
-    public function __construct(?PresentationIdentifierGenerator $identifierGenerator = null)
+    public function __construct(?PresentationIdentifierGenerator $identifierGenerator = null, ?PresentationVariantStore $variantStore = null)
     {
         $this->identifierGenerator = $identifierGenerator ?? new PresentationIdentifierGenerator();
+        $this->variantStore = $variantStore ?? new PresentationVariantStore();
         $compact = new Variants\CompactPresentation();
         $branded = new Variants\BrandedPresentation();
 
@@ -53,6 +55,9 @@ final class ChallengePresenter
         $this->registerVariant('shield', new Variants\ShieldPresentation());
         $this->registerVariant('pill', new Variants\PillPresentation());
         $this->registerVariant('checkmark', new Variants\CheckmarkPresentation());
+        for ($variant = 8; $variant <= 14; $variant++) {
+            $this->registerVariant('extended-' . $variant, new Variants\ExtendedPresentation($variant));
+        }
     }
 
     /**
@@ -114,7 +119,7 @@ final class ChallengePresenter
         string $verificationToken,
         string $action
     ): string {
-        $variant = $this->selectVariant();
+        $variant = $this->variantForChallenge($challengeId);
 
         return $this->variants[$variant]->render($this->viewData($variant, $challengeId, $verificationToken, $action));
     }
@@ -122,7 +127,7 @@ final class ChallengePresenter
     /** @param array<string, string> $overrides */
     public function presentWithOverrides(string $challengeId, string $verificationToken, string $action, array $overrides): string
     {
-        $variant = $this->selectVariant();
+        $variant = $this->variantForChallenge($challengeId);
 
         return $this->variants[$variant]->render($this->viewData($variant, $challengeId, $verificationToken, $action, $overrides));
     }
@@ -135,13 +140,13 @@ final class ChallengePresenter
             : null;
 
         return new ChallengeViewData(
-            title: $overrides['title'] ?? $profile['title'] ?? ContentCatalogue::randomTitle(),
-            heading: $overrides['heading'] ?? $profile['heading'] ?? ContentCatalogue::randomHeading(),
-            body: $overrides['message'] ?? $profile['body'] ?? ContentCatalogue::randomBody(),
-            buttonLabel: $overrides['button'] ?? $profile['button'] ?? ContentCatalogue::randomButtonLabel(),
-            trustFooter: $profile['trust'] ?? ContentCatalogue::randomTrustFooter(),
+            title: $overrides['title'] ?? ContentCatalogue::randomTitle(),
+            heading: $overrides['heading'] ?? ContentCatalogue::randomHeading(),
+            body: $overrides['message'] ?? ContentCatalogue::randomBody(),
+            buttonLabel: $overrides['button'] ?? ContentCatalogue::randomButtonLabel(),
+            trustFooter: $overrides['trust_footer'] ?? ContentCatalogue::randomTrustFooter(),
             referenceCode: ReferenceCodeGenerator::generate(),
-            variant: $variant,
+            variant: $profile ? $profile['layout'] : $variant,
             challengeId: $challengeId,
             verificationToken: $verificationToken,
             action: $action,
@@ -152,7 +157,37 @@ final class ChallengePresenter
     }
 
     /**
-     * Selects a variant for the next presentation.
+     * Returns the presentation variant assigned to this challenge.
+     *
+     * The first render selects it randomly. Every subsequent render for the
+     * same challenge reuses that exact variant so challenge -> checking ->
+     * success/retry never swaps the visual design.
+     */
+    private function variantForChallenge(string $challengeId): string
+    {
+        $existing = $this->variantStore->get($challengeId);
+
+        if ($existing !== null && in_array($existing, $this->enabledVariants(), true)) {
+            return $existing;
+        }
+
+        $variant = $this->selectVariant();
+        $this->variantStore->put($challengeId, $variant);
+
+        return $variant;
+    }
+
+    /**
+     * Releases presentation state after the challenge lifecycle reaches its
+     * terminal success presentation.
+     */
+    public function forgetVariant(string $challengeId): void
+    {
+        $this->variantStore->forget($challengeId);
+    }
+
+    /**
+     * Selects a variant for a new challenge.
      *
      * Uses random selection from enabled variants.
      */

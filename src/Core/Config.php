@@ -35,12 +35,7 @@ class Config
                 'exclude_hosts' => [],
                 'exclude_paths' => [],
             ],
-            'presentation' => [
-                'title' => 'Security verification',
-                'heading' => 'Security verification',
-                'message' => 'Please confirm to continue to the requested page.',
-                'button' => 'Continue',
-            ],
+            'presentation' => [],
         ],
         'routing' => [
             // Explicit root-domain behavior.
