@@ -38,11 +38,13 @@ final class ChallengePresenter
 
     private PresentationIdentifierGenerator $identifierGenerator;
     private PresentationVariantStore $variantStore;
+    private HoneypotGenerator $honeypotGenerator;
 
-    public function __construct(?PresentationIdentifierGenerator $identifierGenerator = null, ?PresentationVariantStore $variantStore = null)
+    public function __construct(?PresentationIdentifierGenerator $identifierGenerator = null, ?PresentationVariantStore $variantStore = null, ?HoneypotGenerator $honeypotGenerator = null)
     {
         $this->identifierGenerator = $identifierGenerator ?? new PresentationIdentifierGenerator();
         $this->variantStore = $variantStore ?? new PresentationVariantStore();
+        $this->honeypotGenerator = $honeypotGenerator ?? new HoneypotGenerator();
         $compact = new Variants\CompactPresentation();
         $branded = new Variants\BrandedPresentation();
 
@@ -153,6 +155,7 @@ final class ChallengePresenter
             identifiers: $this->identifierGenerator->generate(),
             eyebrow: $profile['eyebrow'] ?? '',
             profile: $variant,
+            honeypot: $this->honeypotGenerator->generate(),
         );
     }
 

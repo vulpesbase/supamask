@@ -30,6 +30,7 @@ final class LifecycleIntegrationTest extends TestCase
             'challenge' => [
                 'enabled' => true,
                 'path' => '/_supamask/challenge/',
+                'proof_of_work' => ['enabled' => false],
             ],
             'disposable' => [
                 'enabled' => true,
@@ -105,7 +106,8 @@ final class LifecycleIntegrationTest extends TestCase
 
         // ── C. Failed verification ──
         $verifyResponse = $this->post('/_supamask/challenge/' . $challengeId, ['token' => 'wrong']);
-        $this->assertSame(404, $verifyResponse->status());
+        $this->assertSame(200, $verifyResponse->status());
+        $this->assertStringContainsString('state==="retry"', $verifyResponse->body());
         
         // Entry MUST still be ACTIVE
         $this->assertTrue($this->entryManager->inspect($slug)->isActive());
@@ -118,9 +120,9 @@ final class LifecycleIntegrationTest extends TestCase
 
         $successResponse = $this->post('/_supamask/challenge/' . $challengeId, ['token' => $challenge->verificationToken()]);
         
-        // Should redirect to destination
-        $this->assertSame(302, $successResponse->status());
-        $this->assertSame('/dashboard', $successResponse->headers()['Location']);
+        // Should return 200 with success state (polymorphic presentation JS redirect)
+        $this->assertSame(200, $successResponse->status());
+        $this->assertStringContainsString('state==="success"', $successResponse->body());
 
         // Entry MUST become CONSUMED
         $registry = new SessionDisposableEntryRegistry();

@@ -26,13 +26,16 @@ final class ChallengeMiddleware implements MiddlewareInterface
         $requestContext = $this->contextFactory->fromRequest($context->request());
 
         if (!$this->policy->requiresChallenge($requestContext)) {
+            $context->setDecisionReason('route_allowed');
             return Decision::ALLOW;
         }
 
         if ($this->verification->isVerified()) {
+            $context->setDecisionReason('challenge_verified');
             return Decision::ALLOW;
         }
 
+        $context->setDecisionReason('challenge_required');
         return Decision::CHALLENGE;
     }
 }

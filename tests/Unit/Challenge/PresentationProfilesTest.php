@@ -9,9 +9,9 @@ use Supamask\Challenge\Presentation\PresentationProfileCatalogue;
 
 final class PresentationProfilesTest extends TestCase
 {
-    public function testSevenReferenceProfilesExist(): void
+    public function testAllSupportedProfilesExist(): void
     {
-        $this->assertCount(7, PresentationProfileCatalogue::all());
+        $this->assertCount(14, PresentationProfileCatalogue::all());
         $this->assertSame([
             'branded-confirm',
             'compact-icon-confirm',
@@ -20,6 +20,13 @@ final class PresentationProfilesTest extends TestCase
             'compact-almost',
             'branded-one-more',
             'branded-protected',
+            'extended-8',
+            'extended-9',
+            'extended-10',
+            'extended-11',
+            'extended-12',
+            'extended-13',
+            'extended-14',
         ], PresentationProfileCatalogue::names());
     }
 
@@ -62,15 +69,7 @@ final class PresentationProfilesTest extends TestCase
 
     public static function profileProvider(): array
     {
-        return [
-            ['branded-confirm'],
-            ['compact-icon-confirm'],
-            ['compact-secure'],
-            ['compact-quick'],
-            ['compact-almost'],
-            ['branded-one-more'],
-            ['branded-protected'],
-        ];
+        return array_map(static fn (string $name): array => [$name], PresentationProfileCatalogue::names());
     }
 
     public function testPresentationReferenceChangesPerRender(): void

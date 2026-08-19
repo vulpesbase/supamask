@@ -8,6 +8,7 @@ use Supamask\Entry\EntryClassification;
 use Supamask\Http\Request;
 use Supamask\Http\RequestContext;
 use Supamask\Http\RequestContextFactory;
+use Supamask\Security\IpIntelligence\IpIntelligenceResult;
 
 /**
  * Carries the current request and configuration through the middleware pipeline.
@@ -21,6 +22,8 @@ class Context
     private ?EntryClassification $classification = null;
     private ?DisposableEntry $disposableEntry = null;
     private ?DisposableEntryState $invalidDisposableEntryState = null;
+    private ?IpIntelligenceResult $ipIntelligence = null;
+    private ?string $decisionReason = null;
     private RequestContextFactory $contextFactory;
 
     public function __construct(
@@ -88,5 +91,25 @@ class Context
     public function getInvalidDisposableEntryState(): ?DisposableEntryState
     {
         return $this->invalidDisposableEntryState;
+    }
+
+    public function setIpIntelligence(IpIntelligenceResult $intelligence): void
+    {
+        $this->ipIntelligence = $intelligence;
+    }
+
+    public function ipIntelligence(): ?IpIntelligenceResult
+    {
+        return $this->ipIntelligence;
+    }
+
+    public function setDecisionReason(string $reason): void
+    {
+        $this->decisionReason = $reason;
+    }
+
+    public function decisionReason(): ?string
+    {
+        return $this->decisionReason;
     }
 }

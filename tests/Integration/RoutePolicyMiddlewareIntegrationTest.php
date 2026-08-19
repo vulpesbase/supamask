@@ -19,6 +19,15 @@ final class RoutePolicyMiddlewareIntegrationTest extends TestCase
         parent::tearDown();
     }
 
+    protected function setUp(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION = [];
+        parent::setUp();
+    }
+
     public function testNormalizedUrlStillMatchesProtectedRoute(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'GET';

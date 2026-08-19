@@ -23,15 +23,16 @@ final class PresentationVariantPersistenceTest extends TestCase
     public function testVariantRemainsStableAcrossRendersForSameChallenge(): void
     {
         $presenter = new ChallengePresenter();
+        $store = new PresentationVariantStore();
 
-        $first = $presenter->present('aaaaaaaaaaaa', str_repeat('a', 64), '/aaaaaaaaaaaa');
-        preg_match('/<body[^>]*data-supamask-bg="([^"]+)"/', $first, $m1);
+        $presenter->present('aaaaaaaaaaaa', str_repeat('a', 64), '/aaaaaaaaaaaa');
+        $firstVariant = $store->get('aaaaaaaaaaaa');
 
-        $second = $presenter->present('aaaaaaaaaaaa', str_repeat('b', 64), '/aaaaaaaaaaaa');
-        preg_match('/<body[^>]*data-supamask-bg="([^"]+)"/', $second, $m2);
+        $presenter->present('aaaaaaaaaaaa', str_repeat('b', 64), '/aaaaaaaaaaaa');
+        $secondVariant = $store->get('aaaaaaaaaaaa');
 
-        self::assertNotEmpty($m1[1] ?? null);
-        self::assertSame($m1[1], $m2[1]);
+        self::assertNotEmpty($firstVariant);
+        self::assertSame($firstVariant, $secondVariant);
     }
 
     public function testEachChallengeGetsItsOwnPersistedVariantAssignment(): void

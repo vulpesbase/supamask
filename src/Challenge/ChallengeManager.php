@@ -6,6 +6,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use InvalidArgumentException;
 use RuntimeException;
+use Supamask\Security\ProofOfWork\ProofOfWorkGenerator;
 
 final class ChallengeManager
 {
@@ -13,6 +14,8 @@ final class ChallengeManager
         private ChallengeStoreInterface $store,
         private int $ttl = 300,
         private int $verificationTtl = 1800,
+        private ?ProofOfWorkGenerator $proofOfWorkGenerator = null,
+        private ?\Supamask\Security\ProofOfWork\ProofOfWorkVerifier $proofOfWorkVerifier = null,
     ) {
         if ($ttl <= 0) {
             throw new InvalidArgumentException('Challenge TTL must be greater than zero.');
@@ -34,6 +37,7 @@ final class ChallengeManager
             bin2hex(random_bytes(32)),
             ChallengeState::PENDING,
             $entrySlug,
+            $this->proofOfWorkGenerator?->create($now),
         );
 
         $this->store->save($challenge);
@@ -57,9 +61,28 @@ final class ChallengeManager
         return $challenge;
     }
 
-    public function consume(string $id, string $token, ?DateTimeImmutable $now = null): Challenge
+    public function consume(string $id, string $token, ?DateTimeImmutable $now = null, ?string $proofOfWorkCounter = null): Challenge
     {
         $challenge = $this->verify($id, $token, $now);
+
+        if ($challenge->proofOfWork() !== null) {
+            if ($this->proofOfWorkVerifier === null) {
+                throw new RuntimeException('Proof-of-work verification is not configured.');
+            }
+
+            if ($proofOfWorkCounter === null) {
+                throw new RuntimeException('Proof-of-work solution is required.');
+            }
+
+            $this->proofOfWorkVerifier->verify(
+                $challenge->proofOfWork(),
+                $challenge->verificationToken(),
+                $proofOfWorkCounter,
+                $now,
+            );
+            $this->proofOfWorkVerifier->consume($challenge->proofOfWork());
+        }
+
         $challenge->consume();
         $this->store->save($challenge);
 

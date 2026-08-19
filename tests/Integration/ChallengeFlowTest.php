@@ -65,8 +65,27 @@ class ChallengeFlowTest extends TestCase
         $this->assertNotNull($response);
         $this->assertSame(200, $response->status());
         $this->assertStringContainsString('<title>', $body);
-        $this->assertStringContainsString('<form method="post"', $body);
+        $this->assertMatchesRegularExpression('/<form[^>]*method="post"/i', $body);
         $this->assertStringContainsString($challenge->verificationToken(), $body);
+    }
+
+    public function testQueryParametersArePreservedExactlyThroughVerification(): void
+    {
+        $original = '/index.php?campaignId=3mJr%2B9x&source=email&tag=a%26b&tag=second';
+
+        $challenge = (new ChallengeManager($this->store))->create($original);
+        $_SERVER['REQUEST_URI'] = '/' . $challenge->id();
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST = ['token' => $challenge->verificationToken()];
+
+        $response = $this->kernel->handle(new Request());
+
+        $this->assertNotNull($response);
+        $this->assertSame(200, $response->status());
+        $this->assertStringContainsString(
+            (string) json_encode($original, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES),
+            $response->body()
+        );
     }
 
     public function testPostConsumesChallengeAndRedirectsToOriginalUri(): void
@@ -79,8 +98,8 @@ class ChallengeFlowTest extends TestCase
         $response = $this->kernel->handle(new Request());
 
         $this->assertNotNull($response);
-        $this->assertSame(302, $response->status());
-        $this->assertSame('/pricing?plan=pro', $response->headers()['Location']);
+        $this->assertSame(200, $response->status());
+        $this->assertStringContainsString('state==="success"', $response->body());
         $this->assertSame('consumed', $this->store->find($challenge->id())->state()->value);
     }
 

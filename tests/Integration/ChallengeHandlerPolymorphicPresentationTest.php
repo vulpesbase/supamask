@@ -218,9 +218,11 @@ final class ChallengeHandlerPolymorphicPresentationTest extends TestCase
 
         $verifyResponse = $handler->handle(new Request());
 
-        // Should redirect to original URI
-        $this->assertSame(302, $verifyResponse->status());
-        $this->assertSame('/verify-test', $verifyResponse->headers()['Location']);
+        // Verification renders the success state, which client-side redirects
+        // to the original local URI after the confirmation transition.
+        $this->assertSame(200, $verifyResponse->status());
+        $this->assertStringContainsString('state==="success"', $verifyResponse->body());
+        $this->assertStringContainsString('window.location.replace("/verify-test")', $verifyResponse->body());
     }
 
     public function testPresenterCanRestrictVariants(): void
@@ -250,7 +252,7 @@ final class ChallengeHandlerPolymorphicPresentationTest extends TestCase
         $html = $renderResponse->body();
 
         // Presentation class names are generated per render, rather than static.
-        $this->assertStringNotContainsString('supamask-', $html);
+        $this->assertDoesNotMatchRegularExpression('/(?:class|id)="supamask-/', $html);
         $this->assertMatchesRegularExpression('/class="[a-z][a-z0-9]{15}"/', $html);
         $this->assertStringContainsString('🛡️', $html);
     }
@@ -284,7 +286,7 @@ final class ChallengeHandlerPolymorphicPresentationTest extends TestCase
             };
 
             $this->assertStringContainsString($expectedMarker, $html);
-            $this->assertStringNotContainsString('supamask-', $html);
+            $this->assertDoesNotMatchRegularExpression('/(?:class|id)="supamask-/', $html);
         }
     }
 }

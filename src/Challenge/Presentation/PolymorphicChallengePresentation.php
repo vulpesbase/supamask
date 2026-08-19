@@ -63,20 +63,15 @@ final class PolymorphicChallengePresentation implements ChallengePresentationInt
         }
 
         $state = isset($context['state']) ? (string) $context['state'] : 'challenge';
-        $enhanced = ChallengeStateEnhancer::enhance(
-            $html,
-            $state,
-            isset($context['redirect']) ? (string) $context['redirect'] : null,
-        );
 
-        // The success response has already been rendered with the original
-        // challenge variant. It is now safe to release the presentation-only
-        // session mapping; the consumed challenge cannot be rendered again.
+        // The challenge handler applies the common state enhancer after the
+        // presentation renders so custom ChallengePresentationInterface
+        // implementations receive the same lifecycle and PoW behavior.
         if ($state === 'success') {
             $this->presenter->forgetVariant($challengeId);
         }
 
-        return $enhanced;
+        return $html;
     }
 
     /**

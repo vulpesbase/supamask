@@ -36,6 +36,7 @@ final class SecurityReviewTest extends TestCase
             'challenge' => [
                 'enabled' => true,
                 'path' => '/_supamask/challenge/',
+                'proof_of_work' => ['enabled' => false],
             ],
             'disposable' => [
                 'enabled' => true,
@@ -228,7 +229,8 @@ final class SecurityReviewTest extends TestCase
 
         // Correct token (successful verification)
         $verifyResponse = $this->post('/_supamask/challenge/' . $challengeId2, ['token' => $challenge2->verificationToken()]);
-        $this->assertSame(302, $verifyResponse->status());
+        $this->assertSame(200, $verifyResponse->status());
+        $this->assertStringContainsString('state==="success"', $verifyResponse->body());
 
         // Now entry MUST be CONSUMED
         $registry = new SessionDisposableEntryRegistry();

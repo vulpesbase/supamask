@@ -21,10 +21,12 @@ class IpBlockMiddleware implements MiddlewareInterface
         $ip = $context->request()->ip();
 
         if ($this->antiRed->contains($ip)) {
+            $context->setDecisionReason('blocked_ip_antired');
             return Decision::DENY;
         }
 
         if ($this->customBlocklist->contains($ip)) {
+            $context->setDecisionReason('blocked_ip');
             return Decision::DENY;
         }
 

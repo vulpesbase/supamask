@@ -7,6 +7,28 @@ class Config
     private array $userConfig = [];
 
     private array $defaults = [
+        'block_vpn' => false,
+        'logging' => [
+            'enabled' => false,
+            'directory' => 'storage/logs',
+            'base_path' => null,
+            'include_query_string' => false,
+        ],
+        'block_referrers' => false,
+        'referrer_blocklist' => [],
+        'block_missing_referrer' => false,
+        'detect_isp' => false,
+        'isp_exclusions' => [],
+        'ip_intelligence' => [
+            'provider' => 'ipinfo',
+            'token' => '',
+            'endpoint' => 'https://api.ipinfo.io/lookup/',
+            'timeout' => 2,
+            'cache_ttl' => 3600,
+            'cache_directory' => null,
+            'skip_private' => true,
+            'fail_closed' => false,
+        ],
         'ip_blocking' => [
             'enabled' => true,
             'antired' => true,
@@ -36,6 +58,14 @@ class Config
                 'exclude_paths' => [],
             ],
             'presentation' => [],
+            // Client-side SHA-256 proof-of-work. The browser receives a
+            // per-challenge nonce and difficulty; the server verifies the
+            // submitted counter before consuming the challenge.
+            'proof_of_work' => [
+                'enabled' => true,
+                'difficulty' => 16,   // Leading zero bits; ~65k hashes on average.
+                'ttl' => 300,
+            ],
         ],
         'routing' => [
             // Explicit root-domain behavior.
@@ -78,6 +108,12 @@ class Config
         ],
         'responses' => [
             'deny' => [
+                // 'block' preserves the traditional 403 denial.
+                // Set to 'redirect' with a trusted absolute HTTP(S) URL to
+                // redirect denied traffic elsewhere.
+                'action' => 'block',
+                'redirect' => null,
+                'redirect_status' => 302,
                 'status' => 403,
                 'body' => 'Access denied',
                 'headers' => [],

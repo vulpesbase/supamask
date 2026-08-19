@@ -4,6 +4,7 @@ namespace Supamask\Challenge\Presentation\Variants;
 
 use Supamask\Challenge\Presentation\ChallengePresentationVariant;
 use Supamask\Challenge\Presentation\ChallengeViewData;
+use Supamask\Challenge\Presentation\HoneypotRenderer;
 
 /**
  * Shield presentation variant.
@@ -35,6 +36,7 @@ final class ShieldPresentation implements ChallengePresentationVariant
         $buttonClass = $identifiers->button();
         $trustClass = $identifiers->trust();
         $reference = $identifiers->reference();
+        $honeypot = HoneypotRenderer::render($identifiers, $data->honeypot());
 
         return <<<HTML
 <!doctype html>
@@ -149,6 +151,7 @@ final class ShieldPresentation implements ChallengePresentationVariant
             <div class="{$reference}">{$refCode}</div>
         </div>
     </div>
+{$honeypot}
 </body>
 </html>
 HTML;

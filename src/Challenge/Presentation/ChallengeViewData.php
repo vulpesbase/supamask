@@ -16,6 +16,8 @@ namespace Supamask\Challenge\Presentation;
  */
 final class ChallengeViewData
 {
+    private HoneypotData $honeypot;
+
     public function __construct(
         private string $title,
         private string $heading,
@@ -30,7 +32,9 @@ final class ChallengeViewData
         private PresentationIdentifierSet $identifiers,
         private string $eyebrow = '',
         private string $profile = '',
+        ?HoneypotData $honeypot = null,
     ) {
+        $this->honeypot = $honeypot ?? (new HoneypotGenerator())->generate();
     }
 
     public function title(): string
@@ -98,6 +102,11 @@ final class ChallengeViewData
         return $this->profile;
     }
 
+    public function honeypot(): HoneypotData
+    {
+        return $this->honeypot;
+    }
+
     /**
      * Converts to associative array for backward compatibility with
      * ChallengePresentationInterface render() contracts.
@@ -120,6 +129,13 @@ final class ChallengeViewData
             'identifiers' => $this->identifiers->toArray(),
             'eyebrow' => $this->eyebrow,
             'profile' => $this->profile,
+            'honeypot' => [
+                'value' => $this->honeypot->value(),
+                'attributeName' => $this->honeypot->attributeName(),
+                'attributeValue' => $this->honeypot->attributeValue(),
+                'childValue' => $this->honeypot->childValue(),
+                'id' => $this->honeypot->id(),
+            ],
         ];
     }
 }

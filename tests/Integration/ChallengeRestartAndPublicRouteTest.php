@@ -51,7 +51,7 @@ final class ChallengeRestartAndPublicRouteTest extends TestCase
         $response = $this->handler->handle(new Request());
 
         $this->assertSame(200, $response->status());
-        $this->assertStringContainsString('<form method="post"', $response->body());
+        $this->assertMatchesRegularExpression('/<form[^>]*method="post"/i', $response->body());
         $this->assertStringContainsString('name="token"', $response->body());
     }
 

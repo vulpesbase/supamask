@@ -71,7 +71,7 @@ final class ChallengeUserFacingRouteTest extends TestCase
 
         $this->assertSame(200, $response->status());
         $body = $response->body();
-        $this->assertStringContainsString('<form method="post"', $body);
+        $this->assertMatchesRegularExpression('/<form[^>]*method="post"/i', $body);
         $this->assertStringContainsString('name="token"', $body);
         
         $id = basename($location);
@@ -111,8 +111,8 @@ final class ChallengeUserFacingRouteTest extends TestCase
         $_POST['token'] = $m[1];
         $verified = $kernel->handle(new Request());
 
-        $this->assertSame(302, $verified->status());
-        $this->assertSame('/protected', $verified->headers()['Location']);
+        $this->assertSame(200, $verified->status());
+        $this->assertStringContainsString('state==="success"', $verified->body());
         $this->assertTrue($this->verification->isVerified());
     }
 
@@ -190,6 +190,7 @@ final class ChallengeUserFacingRouteTest extends TestCase
         $baseConfig = [
             'challenge' => [
                 'middleware'  => ['enabled' => true],
+                'proof_of_work' => ['enabled' => false],
                 'protection'  => ['enabled' => true, 'paths' => ['/protected']],
             ],
             'ip_blocking'  => ['enabled' => false],

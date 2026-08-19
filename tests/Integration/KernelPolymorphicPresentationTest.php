@@ -67,17 +67,13 @@ final class KernelPolymorphicPresentationTest extends TestCase
 
         $this->assertStringContainsString('<h1', $firstHtml);
         $this->assertStringContainsString('<p ', $firstHtml);
-        $this->assertStringContainsString('<form method="post"', $firstHtml);
-        $this->assertSame(1, substr_count($firstHtml, 'type="submit"') + substr_count($firstHtml, 'type=submit'));
+        $this->assertMatchesRegularExpression('/<form[^>]*method="post"/i', $firstHtml);
+        $this->assertMatchesRegularExpression('/<button[^>]*type="?submit"?/i', $firstHtml);
         $this->assertStringContainsString('name="token"', $firstHtml);
         $this->assertStringContainsString('</button>', $firstHtml);
         $this->assertMatchesRegularExpression('/class="[a-z][a-z0-9]{15}"/', $firstHtml);
-        $this->assertStringNotContainsString('supamask-', $firstHtml);
-        $this->assertTrue(
-            str_contains($firstHtml, 'max-width:440px') ||
-            str_contains($firstHtml, 'max-width:390px') ||
-            str_contains($firstHtml, 'max-width:420px')
-        );
+        $this->assertDoesNotMatchRegularExpression('/(?:class|id)="supamask-/', $firstHtml);
+        $this->assertMatchesRegularExpression('/max-width:\d+px/', $firstHtml);
         $this->assertTrue($this->containsTrustFooter($firstHtml));
         $firstReferenceCode = $this->referenceCode($firstHtml);
 
@@ -131,7 +127,7 @@ final class KernelPolymorphicPresentationTest extends TestCase
 
     private function referenceCode(string $html): string
     {
-        preg_match('/<span id="[a-f0-9]+">([A-Z0-9]{8})<\/span>/', $html, $matches);
+        preg_match('/<span[^>]*>([A-Z0-9]{8})<\/span>/', $html, $matches);
 
         $this->assertArrayHasKey(1, $matches);
 

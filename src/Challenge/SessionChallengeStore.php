@@ -4,6 +4,7 @@ namespace Supamask\Challenge;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use Supamask\Security\ProofOfWork\ProofOfWorkChallenge;
 
 final class SessionChallengeStore implements ChallengeStoreInterface
 {
@@ -20,6 +21,12 @@ final class SessionChallengeStore implements ChallengeStoreInterface
             'verification_token' => $challenge->verificationToken(),
             'state' => $challenge->state()->value,
             'entry_slug' => $challenge->entrySlug(),
+            'pow' => $challenge->proofOfWork() === null ? null : [
+                'nonce' => $challenge->proofOfWork()->nonce(),
+                'difficulty' => $challenge->proofOfWork()->difficulty(),
+                'expires_at' => $challenge->proofOfWork()->expiresAt()->format(DateTimeImmutable::ATOM),
+                'consumed' => $challenge->proofOfWork()->consumed(),
+            ],
         ];
     }
 
@@ -45,6 +52,7 @@ final class SessionChallengeStore implements ChallengeStoreInterface
                 (string) $data['verification_token'],
                 ChallengeState::from((string) $data['state']),
                 $data['entry_slug'] ?? null,
+                $this->restoreProofOfWork($data['pow'] ?? null),
             );
         } catch (\Throwable) {
             return null;
@@ -55,6 +63,24 @@ final class SessionChallengeStore implements ChallengeStoreInterface
     {
         $this->ensureSession();
         unset($_SESSION[self::SESSION_KEY][$challenge->id()]);
+    }
+
+    private function restoreProofOfWork(mixed $data): ?ProofOfWorkChallenge
+    {
+        if (!is_array($data)) {
+            return null;
+        }
+
+        try {
+            return new ProofOfWorkChallenge(
+                (string) $data['nonce'],
+                (int) $data['difficulty'],
+                new DateTimeImmutable((string) $data['expires_at'], new DateTimeZone('UTC')),
+                (bool) ($data['consumed'] ?? false),
+            );
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function ensureSession(): void

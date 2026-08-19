@@ -7,6 +7,7 @@ use Supamask\Core\Config;
 use Supamask\Entry\DisposableEntryManager;
 use Supamask\Http\Request;
 use Supamask\Http\Response;
+use Supamask\Challenge\Presentation\ChallengeStateEnhancer;
 
 final class ChallengeHandler
 {
@@ -16,7 +17,9 @@ final class ChallengeHandler
         private Config $config,
         private ChallengePresentationInterface $presentation,
         private ?DisposableEntryManager $disposableEntryManager = null,
+        private ?ChallengeSecurityPolicy $securityPolicy = null,
     ) {
+        $this->securityPolicy ??= new ChallengeSecurityPolicy();
     }
 
     public function matches(Request $request): bool
@@ -58,10 +61,12 @@ final class ChallengeHandler
                     // Keep the same challenge available and render its retry state.
                     $challenge = $this->manager->inspect($id);
 
+                    $rendered = $this->renderProtected($challenge->id(), $challenge->verificationToken(), 'retry');
+
                     return new Response(
                         200,
-                        $this->render($challenge->id(), $challenge->verificationToken(), 'retry'),
-                        $this->noStoreHeaders('text/html; charset=UTF-8'),
+                        $rendered['body'],
+                        array_merge($this->noStoreHeaders('text/html; charset=UTF-8'), $rendered['headers']),
                     );
                 }
             }
@@ -76,10 +81,12 @@ final class ChallengeHandler
 
             $challenge = $this->manager->inspect($id);
 
+            $rendered = $this->renderProtected($challenge->id(), $challenge->verificationToken());
+
             return new Response(
                 200,
-                $this->render($challenge->id(), $challenge->verificationToken()),
-                $this->noStoreHeaders('text/html; charset=UTF-8'),
+                $rendered['body'],
+                array_merge($this->noStoreHeaders('text/html; charset=UTF-8'), $rendered['headers']),
             );
         } catch (RuntimeException) {
             if ($request->method() === 'GET') {
@@ -140,6 +147,7 @@ final class ChallengeHandler
     private function verify(Request $request, string $id): Response
     {
         $token = $request->input('token');
+        $proofOfWorkCounter = $request->input('pow_counter');
 
         if (!is_string($token) || $token === '') {
             return new Response(400, 'Invalid verification request.', [
@@ -148,7 +156,12 @@ final class ChallengeHandler
             ]);
         }
 
-        $challenge = $this->manager->consume($id, $token);
+        $challenge = $this->manager->consume(
+            $id,
+            $token,
+            null,
+            is_string($proofOfWorkCounter) ? $proofOfWorkCounter : null,
+        );
 
         if ($challenge->entrySlug() !== null && $this->disposableEntryManager !== null) {
             $this->disposableEntryManager->consume($challenge->entrySlug());
@@ -156,10 +169,17 @@ final class ChallengeHandler
 
         $this->verification->markVerified($this->manager->verificationTtl());
 
+        $rendered = $this->renderProtected(
+            $challenge->id(),
+            $challenge->verificationToken(),
+            'success',
+            $challenge->originalUri(),
+        );
+
         return new Response(
             200,
-            $this->render($challenge->id(), $challenge->verificationToken(), 'success', $challenge->originalUri()),
-            $this->noStoreHeaders('text/html; charset=UTF-8'),
+            $rendered['body'],
+            array_merge($this->noStoreHeaders('text/html; charset=UTF-8'), $rendered['headers']),
         );
     }
 
@@ -224,7 +244,7 @@ final class ChallengeHandler
         return $uri;
     }
 
-    private function render(string $id, string $token, string $state = 'challenge', ?string $redirect = null): string
+    private function render(string $id, string $token, string $state = 'challenge', ?string $redirect = null, ?string $nonce = null): string
     {
         $presentation = $this->config->get('challenge.presentation', []);
 
@@ -235,8 +255,18 @@ final class ChallengeHandler
             'state' => $state,
         ];
 
+        if ($nonce !== null) {
+            $context['csp_nonce'] = $nonce;
+        }
+
         if ($redirect !== null) {
             $context['redirect'] = $redirect;
+        }
+
+        $proofOfWork = $this->manager->find($id)?->proofOfWork();
+        if ($proofOfWork !== null) {
+            $context['pow_nonce'] = $proofOfWork->nonce();
+            $context['pow_difficulty'] = (string) $proofOfWork->difficulty();
         }
 
         foreach (['title', 'heading', 'message', 'button', 'trust_footer'] as $key) {
@@ -245,7 +275,27 @@ final class ChallengeHandler
             }
         }
 
-        return $this->presentation->render($context);
+        $html = $this->presentation->render($context);
+
+        return ChallengeStateEnhancer::enhance(
+            $html,
+            $state,
+            $redirect,
+            $nonce,
+            isset($context['pow_nonce']) ? (string) $context['pow_nonce'] : null,
+            isset($context['pow_difficulty']) ? (int) $context['pow_difficulty'] : null,
+        );
+    }
+
+    /**
+     * @return array{body: string, headers: array<string, string>}
+     */
+    private function renderProtected(string $id, string $token, string $state = 'challenge', ?string $redirect = null): array
+    {
+        $nonce = $this->securityPolicy->nonce();
+        $rendered = $this->render($id, $token, $state, $redirect, $nonce);
+
+        return $this->securityPolicy->protect($rendered, $nonce);
     }
 
     private function noStoreHeaders(string $contentType): array

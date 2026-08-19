@@ -4,6 +4,7 @@ namespace Supamask\Challenge\Presentation\Variants;
 
 use Supamask\Challenge\Presentation\ChallengePresentationVariant;
 use Supamask\Challenge\Presentation\ChallengeViewData;
+use Supamask\Challenge\Presentation\HoneypotRenderer;
 
 /**
  * Pill presentation variant.
@@ -36,6 +37,7 @@ final class PillPresentation implements ChallengePresentationVariant
         $footer = $identifiers->footer();
         $trustClass = $identifiers->trust();
         $reference = $identifiers->reference();
+        $honeypot = HoneypotRenderer::render($identifiers, $data->honeypot());
 
         return <<<HTML
 <!doctype html>
@@ -154,6 +156,7 @@ final class PillPresentation implements ChallengePresentationVariant
             <div class="{$reference}">{$refCode}</div>
         </div>
     </div>
+{$honeypot}
 </body>
 </html>
 HTML;

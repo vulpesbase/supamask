@@ -16,14 +16,29 @@ class SecurityFlowTest extends TestCase
 {
     protected function setUp(): void
     {
-        unset($_SERVER['REMOTE_ADDR']);
-        unset($_SERVER['HTTP_USER_AGENT']);
+        $_SERVER = [];
+        $_POST = [];
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION = [];
+    }
+
+    protected function tearDown(): void
+    {
+        $_SERVER = [];
+        $_POST = [];
+        $_SESSION = [];
+        parent::tearDown();
     }
 
     private function createRequest(string $ip = '192.168.1.1', string $userAgent = 'Mozilla/5.0'): Request
     {
         $_SERVER['REMOTE_ADDR'] = $ip;
         $_SERVER['HTTP_USER_AGENT'] = $userAgent;
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
+        $_SERVER['HTTP_HOST'] = 'example.test';
         return new Request();
     }
 
@@ -242,6 +257,179 @@ class SecurityFlowTest extends TestCase
             'I am a teapot',
             ['X-Reason' => 'Tea']
         );
+    }
+
+
+    public function testDenyCanRedirectToConfiguredTrustedHttpsDestination(): void
+    {
+        $kernel = $this->createKernel([
+            'responses' => [
+                'deny' => [
+                    'action' => 'redirect',
+                    'redirect' => 'https://freesite.co/blocked',
+                ],
+            ],
+        ]);
+
+        $response = $kernel->handle($this->createRequest('192.0.2.100'));
+
+        $this->assertNotNull($response);
+        $this->assertSame(302, $response->status());
+        $this->assertSame('', $response->body());
+        $this->assertSame('https://freesite.co/blocked', $response->headers()['Location']);
+    }
+
+    public function testDenyRedirectAppliesToBotBlocking(): void
+    {
+        $kernel = $this->createKernel([
+            'responses' => [
+                'deny' => [
+                    'action' => 'redirect',
+                    'redirect' => 'https://freesite.co/bots',
+                ],
+            ],
+        ]);
+
+        $response = $kernel->handle($this->createRequest('192.168.1.1', 'EvilBot'));
+
+        $this->assertNotNull($response);
+        $this->assertSame(302, $response->status());
+        $this->assertSame('https://freesite.co/bots', $response->headers()['Location']);
+    }
+
+    public function testDenyRedirectRejectsUntrustedRelativeDestination(): void
+    {
+        $kernel = $this->createKernel([
+            'responses' => [
+                'deny' => [
+                    'action' => 'redirect',
+                    'redirect' => '/unsafe',
+                ],
+            ],
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('trusted absolute HTTP(S) URL');
+
+        $kernel->handle($this->createRequest('192.0.2.100'));
+    }
+
+    public function testDenyRedirectRejectsRequestLikeProtocolRelativeDestination(): void
+    {
+        $kernel = $this->createKernel([
+            'responses' => [
+                'deny' => [
+                    'action' => 'redirect',
+                    'redirect' => '//evil.example',
+                ],
+            ],
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $kernel->handle($this->createRequest('192.0.2.100'));
+    }
+
+
+    // 4.5. Hard DENY takes precedence over CHALLENGE
+
+    public function testBlockedIpDeniesBeforeChallengeMiddleware(): void
+    {
+        $kernel = $this->createKernel([
+            'challenge' => [
+                'middleware' => ['enabled' => true],
+                'protection' => ['enabled' => true],
+            ],
+            'routing' => [
+                'root' => ['behavior' => 'challenge'],
+            ],
+        ]);
+
+        $response = $kernel->handle($this->createRequest('198.51.100.1'));
+
+        $this->assertNotNull($response);
+        $this->assertSame(403, $response->status());
+        $this->assertSame('Access denied', $response->body());
+    }
+
+    public function testBlockedIpRedirectsBeforeChallengeMiddleware(): void
+    {
+        $kernel = $this->createKernel([
+            'challenge' => [
+                'middleware' => ['enabled' => true],
+                'protection' => ['enabled' => true],
+            ],
+            'routing' => [
+                'root' => ['behavior' => 'challenge'],
+            ],
+            'responses' => [
+                'deny' => [
+                    'action' => 'redirect',
+                    'redirect' => 'https://freesite.co/blocked',
+                ],
+            ],
+        ]);
+
+        $response = $kernel->handle($this->createRequest('198.51.100.1'));
+
+        $this->assertNotNull($response);
+        $this->assertSame(302, $response->status());
+        $this->assertSame('https://freesite.co/blocked', $response->headers()['Location']);
+    }
+
+    public function testBlockedCidrDeniesBeforeChallengeMiddleware(): void
+    {
+        $kernel = $this->createKernel([
+            'challenge' => [
+                'middleware' => ['enabled' => true],
+                'protection' => ['enabled' => true],
+            ],
+            'routing' => [
+                'root' => ['behavior' => 'challenge'],
+            ],
+        ]);
+
+        $response = $kernel->handle($this->createRequest('203.0.113.50'));
+
+        $this->assertNotNull($response);
+        $this->assertSame(403, $response->status());
+        $this->assertSame('Access denied', $response->body());
+    }
+
+    public function testBlockedBotDeniesBeforeChallengeMiddleware(): void
+    {
+        $kernel = $this->createKernel([
+            'challenge' => [
+                'middleware' => ['enabled' => true],
+                'protection' => ['enabled' => true],
+            ],
+            'routing' => [
+                'root' => ['behavior' => 'challenge'],
+            ],
+        ]);
+
+        $response = $kernel->handle($this->createRequest('192.168.1.1', 'EvilBot'));
+
+        $this->assertNotNull($response);
+        $this->assertSame(403, $response->status());
+        $this->assertSame('Access denied', $response->body());
+    }
+
+    public function testAllowedRequestReachesChallengeAfterHardDenyChecks(): void
+    {
+        $kernel = $this->createKernel([
+            'challenge' => [
+                'middleware' => ['enabled' => true],
+                'protection' => ['enabled' => true],
+            ],
+            'routing' => [
+                'root' => ['behavior' => 'challenge'],
+            ],
+        ]);
+
+        $response = $kernel->handle($this->createRequest('192.168.1.1', 'Mozilla/5.0'));
+
+        $this->assertNotNull($response);
+        $this->assertNotSame('Access denied', $response->body());
     }
 
     // 5. HTTP responses

@@ -1,6 +1,6 @@
 {
   "name": "devgonerogue/supamask",
-  "description": "A lightweight PHP middleware library for IP and bot blocking.",
+  "description": "A lightweight PHP security middleware library for IP, bot, challenge, and traffic intelligence controls.",
   "type": "library",
   "license": "MIT",
   "homepage": "https://github.com/vulpesbase/supamask",
@@ -9,7 +9,10 @@
     "middleware",
     "security",
     "ip-blocking",
-    "bot-blocking"
+    "bot-blocking",
+    "ip-intelligence",
+    "vpn-detection",
+    "asn"
   ],
   "autoload": {
     "psr-4": {

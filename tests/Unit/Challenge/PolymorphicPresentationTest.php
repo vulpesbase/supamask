@@ -249,7 +249,7 @@ final class PolymorphicPresentationTest extends TestCase
 
         $this->assertIsString($html);
         $this->assertNotEmpty($html);
-        $this->assertStringContainsString('<!DOCTYPE html>', $html);
+        $this->assertMatchesRegularExpression('/<!doctype html>/i', $html);
         $this->assertStringContainsString('</html>', $html);
         $this->assertStringContainsString('<form', $html);
         $this->assertStringContainsString('type="submit"', $html);
@@ -405,7 +405,7 @@ final class PolymorphicPresentationTest extends TestCase
 
         $this->assertIsString($html);
         $this->assertNotEmpty($html);
-        $this->assertStringContainsString('<!DOCTYPE html>', $html);
+        $this->assertMatchesRegularExpression('/<!doctype html>/i', $html);
         $this->assertStringContainsString('challenge123', $html);
         $this->assertStringContainsString('form', $html);
     }

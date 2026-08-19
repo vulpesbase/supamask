@@ -37,6 +37,7 @@ final class ChallengeSecurityFlowTest extends TestCase
         $config = new Config([
             'challenge' => [
                 'middleware' => ['enabled' => true],
+                'proof_of_work' => ['enabled' => false],
                 'verification_ttl' => 300,
                 'presentation' => [
                     'title' => 'Verify access',
@@ -78,7 +79,8 @@ final class ChallengeSecurityFlowTest extends TestCase
         $_POST = ['token' => $challenge->verificationToken()];
         $verificationResponse = $kernel->handle(new Request());
 
-        $this->assertSame(302, $verificationResponse->status());
+        $this->assertSame(200, $verificationResponse->status());
+        $this->assertStringContainsString('state==="success"', $verificationResponse->body());
         $this->assertTrue($this->verification->isVerified());
 
         $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -102,7 +104,8 @@ final class ChallengeSecurityFlowTest extends TestCase
         $response = $kernel->handle(new Request());
 
         $this->assertNotNull($response);
-        $this->assertSame(404, $response->status());
+        $this->assertSame(200, $response->status());
+        $this->assertStringContainsString('state==="retry"', $response->body());
         $this->assertFalse($this->verification->isVerified());
         $this->assertSame('pending', $challenge->state()->value);
     }

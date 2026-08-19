@@ -19,6 +19,7 @@ class BotBlockMiddleware implements MiddlewareInterface
         $userAgent = $context->request()->userAgent();
 
         if ($this->matcher->matches($userAgent)) {
+            $context->setDecisionReason('blocked_bot');
             return Decision::DENY;
         }
 

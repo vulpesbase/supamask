@@ -4,6 +4,7 @@ namespace Supamask\Challenge;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use Supamask\Security\ProofOfWork\ProofOfWorkChallenge;
 
 final class Challenge
 {
@@ -15,6 +16,7 @@ final class Challenge
         private string $verificationToken,
         private ChallengeState $state = ChallengeState::PENDING,
         private ?string $entrySlug = null,
+        private ?ProofOfWorkChallenge $proofOfWork = null,
     ) {
         if (!preg_match('/^[a-f0-9]{12}$/', $id)) {
             throw new InvalidArgumentException('Challenge ID must be a 12-character lowercase hexadecimal string.');
@@ -66,6 +68,11 @@ final class Challenge
     public function entrySlug(): ?string
     {
         return $this->entrySlug;
+    }
+
+    public function proofOfWork(): ?ProofOfWorkChallenge
+    {
+        return $this->proofOfWork;
     }
 
     public function isPending(): bool

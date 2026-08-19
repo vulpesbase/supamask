@@ -26,8 +26,15 @@ class ConfigTest extends TestCase
         $this->assertTrue($config->get('bot_blocking.antired'));
         $this->assertSame([], $config->get('bot_blocking.signatures'));
 
+        $this->assertFalse($config->get('logging.enabled'));
+        $this->assertSame('storage/logs', $config->get('logging.directory'));
+        $this->assertFalse($config->get('logging.include_query_string'));
+
         $this->assertSame(403, $config->get('responses.deny.status'));
         $this->assertSame('Access denied', $config->get('responses.deny.body'));
+        $this->assertSame('block', $config->get('responses.deny.action'));
+        $this->assertNull($config->get('responses.deny.redirect'));
+        $this->assertSame(302, $config->get('responses.deny.redirect_status'));
         $this->assertSame([], $config->get('responses.deny.headers'));
 
         $this->assertSame(403, $config->get('responses.challenge.status'));
@@ -107,7 +114,14 @@ class ConfigTest extends TestCase
             ],
         ]);
 
-        $expected = ['status' => 403, 'body' => 'Denied', 'headers' => []];
+        $expected = [
+            'action' => 'block',
+            'redirect' => null,
+            'redirect_status' => 302,
+            'status' => 403,
+            'body' => 'Denied',
+            'headers' => [],
+        ];
         $this->assertSame($expected, $config->get('responses.deny'));
     }
 }

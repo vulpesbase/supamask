@@ -146,8 +146,8 @@ final class ChallengeRoutingFlowTest extends TestCase
 
         $verified = $handler->handle(new Request());
 
-        $this->assertSame(302, $verified->status());
-        $this->assertSame('/pricing', $verified->headers()['Location']);
+        $this->assertSame(200, $verified->status());
+        $this->assertStringContainsString('state==="success"', $verified->body());
         $this->assertTrue($verification->isVerified());
     }
 
@@ -179,7 +179,8 @@ final class ChallengeRoutingFlowTest extends TestCase
         $_POST['token'] = $token;
         $first = $handler->handle(new Request());
 
-        $this->assertSame(302, $first->status());
+        $this->assertSame(200, $first->status());
+        $this->assertStringContainsString('state==="success"', $first->body());
 
         $this->request('POST', $location);
         $_POST['token'] = $token;

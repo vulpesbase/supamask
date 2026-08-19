@@ -4,6 +4,7 @@ namespace Supamask\Challenge\Presentation\Variants;
 
 use Supamask\Challenge\Presentation\ChallengePresentationVariant;
 use Supamask\Challenge\Presentation\ChallengeViewData;
+use Supamask\Challenge\Presentation\HoneypotRenderer;
 
 /**
  * Seven additional reference-derived visual compositions (variants 8-14).
@@ -33,8 +34,7 @@ final class ExtendedPresentation implements ChallengePresentationVariant
         $token = $e($data->verificationToken());
         $eyebrow = $e($data->eyebrow());
         $i = $data->identifiers();
-        $rand = static fn (): string => bin2hex(random_bytes(6));
-        $h1 = $rand(); $h2 = $rand(); $h3 = $rand();
+        $honeypot = HoneypotRenderer::render($i, $data->honeypot());
 
         $presets = [
             8 => [
@@ -124,7 +124,7 @@ final class ExtendedPresentation implements ChallengePresentationVariant
         $eyebrowIcon = $split ? '<span style="width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block"></span>' : '';
 
         return '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>'.$title.'</title><style>'
-            .'*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;width:100%}body{min-height:100dvh;font-family:'.$presets['font'].';color:'.$presets['color'].';overflow-x:hidden;background:'.$presets['bg'].'}.'.$i->container().'{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:'.$presets['max'].';z-index:2}.'.$i->card().'{'.$presets['card'].'}.'.$i->content().'{padding:24px 24px 22px;flex:1;min-width:0}.'.$i->heading().'{'.$presets['heading'].'}.'.$i->body().'{'.$presets['body'].'}.'.$i->button().'{width:100%;border:0;'.$presets['button'].';cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}.'.$i->spinner().'{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;animation:'.$i->spinner().' .68s linear infinite;flex-shrink:0}@keyframes '.$i->spinner().'{to{transform:rotate(360deg)}}.'.$i->footer().'{'.$presets['footer'].'}.'.$i->eyebrow().'{'.$presets['eyebrow'].'}.'.$i->honeypot().'{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden}.'.$i->icon().'{width:22px;height:22px;color:#fff}</style><style>.sf-hidden{display:none!important}</style><body data-supamask-bg="'.$presets['bg'].'"><div class="'.$i->container().'" id="'.$h1.'">'.$strip.'<div class="'.$i->card().'">'.$icon.'<div class="'.$i->content().'">'
-            .'<div class="'.$i->eyebrow().'">'.$eyebrowIcon.$eyebrow.'</div><h1 class="'.$i->heading().'">'.$heading.'</h1><p class="'.$i->body().'">'.$body.'</p><form class="'.$i->form().'" method="post" action="'.$action.'"><input type="hidden" name="token" value="'.$token.'"><button type="submit" class="'.$i->button().'"><span class="'.$i->spinner().' sf-hidden" aria-hidden="true"></span><span>'.$button.'</span></button></form><div class="'.$i->footer().'">'.$trust.' · <span id="'.$h2.'">'.$ref.'</span></div></div></div><div class="'.$i->honeypot().'" id="'.$h3.'"></div></div></body></html>';
+            .'*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;width:100%}body{min-height:100dvh;font-family:'.$presets['font'].';color:'.$presets['color'].';overflow-x:hidden;background:'.$presets['bg'].'}.'.$i->container().'{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:'.$presets['max'].';z-index:2}.'.$i->card().'{'.$presets['card'].'}.'.$i->content().'{padding:24px 24px 22px;flex:1;min-width:0}.'.$i->heading().'{'.$presets['heading'].'}.'.$i->body().'{'.$presets['body'].'}.'.$i->button().'{width:100%;border:0;'.$presets['button'].';cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}.'.$i->spinner().'{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;animation:'.$i->spinner().' .68s linear infinite;flex-shrink:0}@keyframes '.$i->spinner().'{to{transform:rotate(360deg)}}.'.$i->footer().'{'.$presets['footer'].'}.'.$i->eyebrow().'{'.$presets['eyebrow'].'}.'.$i->honeypot().'{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden}.'.$i->icon().'{width:22px;height:22px;color:#fff}</style><style>.sf-hidden{display:none!important}</style><body data-supamask-bg="'.$presets['bg'].'"><div class="'.$i->container().'">'.$strip.'<div class="'.$i->card().'">'.$icon.'<div class="'.$i->content().'">'
+            .'<div class="'.$i->eyebrow().'">'.$eyebrowIcon.$eyebrow.'</div><h1 class="'.$i->heading().'">'.$heading.'</h1><p class="'.$i->body().'">'.$body.'</p><form class="'.$i->form().'" method="post" action="'.$action.'"><input type="hidden" name="token" value="'.$token.'"><button type="submit" class="'.$i->button().'"><span class="'.$i->spinner().' sf-hidden" aria-hidden="true"></span><span>'.$button.'</span></button></form><div class="'.$i->footer().'">'.$trust.' · <span id="'.$i->reference().'">'.$ref.'</span></div></div></div></div></div>' . $honeypot . '</body></html>';
     }
 }
