@@ -1,119 +1,60 @@
-## [Unreleased]
-
-### Added
-- Added immutable `RequestContext` snapshots for normalized request metadata.
-- Added `RequestContextFactory` for centralized request parsing and normalization.
-- Added context-level accessors for method, scheme, host, port, path, query, IP, user agent, referrer, and headers.
-- Added request-context unit and integration tests.
-
-### Changed
-- `ChallengeMiddleware` now creates one request context before evaluating route policy.
-- `RoutePolicy` now consumes `RequestContext` instead of parsing the raw HTTP request.
-
-## [Unreleased]
-
-### Added
-- Added end-to-end challenge routing integration coverage.
-- Added integration coverage for protected, excluded, normalized, verified, and replayed requests.
-
-### Verified
-- Protected routes reach `Decision::CHALLENGE`.
-- Excluded routes remain `ALLOW`.
-- Successful challenge verification returns the original URI.
-- Verified sessions allow protected routes.
-- Consumed challenges cannot be replayed.
-- Host/path normalization survives the middleware boundary.
-
-## [Unreleased]
-
-### Added
-- Added explicit route-policy precedence documentation.
-- Added a precedence test matrix covering disabled policies, host/path intersections, exclusions, and unrestricted dimensions.
-
-### Changed
-- Route-policy evaluation now has a documented deterministic order: disablement, exclusions, then host/path inclusion matching.
-
-## [Unreleased]
-
-### Added
-- Added `RouteMatcher` for normalized host/path matching.
-- Added wildcard host matching (`*.example.test`).
-- Added robust subtree matching for `/app/*`.
-- Added path normalization for query strings, trailing slashes, and duplicate separators.
-- Added tests for host ports, case normalization, IPv6 literals, regex paths, and wildcard boundaries.
-
-### Changed
-- `RoutePolicy` now delegates matching and normalization to `RouteMatcher`.
-
-## [Unreleased]
-
-### Added
-- Added deterministic `RoutePolicy` host/path matching for challenge protection.
-- Added root, wildcard subpath, host, and exclusion policy tests.
-- Added `Request::referrer()` for request metadata access.
-
-### Changed
-- `ChallengeMiddleware` now evaluates an explicit route policy before requiring verification.
-- Added configurable `challenge.protection` settings.
-
-## [Unreleased]
-
-### Added
-- Added `ChallengePresentationInterface` for pluggable challenge rendering.
-- Added `DefaultChallengePresentation` as the built-in presentation.
-- Added a custom presentation example.
-- Added presentation unit tests.
-
-### Changed
-- Removed HTML/template responsibilities from `ChallengeHandler`.
-- `ChallengeHandler` now supplies challenge context to the configured presentation.
-- `Kernel` falls back to the default presentation when no custom implementation is configured.
-
-## [Unreleased]
-
-### Changed
-- Extracted challenge HTTP routing, rendering, and verification handling from `Kernel` into `ChallengeHandler`.
-- Kept `Kernel` focused on request orchestration and middleware decisions.
-- Added focused challenge handler tests for route recognition, malformed IDs, challenge creation, and HTML escaping.
-
-
-## Unreleased — v0.2
-
-### Added
-- Challenge request lifecycle integration in the kernel.
-- Configurable challenge TTL and route path.
-- Session-backed challenge persistence for multi-request verification.
-- Challenge GET rendering and POST consumption with redirect to the original URI.
-- Challenge integration tests.
 # Changelog
 
-All notable changes to Supamask are documented here.
+All notable changes to Supamask are documented in this file.
 
-## [Unreleased]
+This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and uses [Semantic Versioning](https://semver.org/).
 
-Release status has not been declared yet.
+## [0.2.0] - 2026-08-19
 
-## [0.1.0]
+### Added
 
-Supamask v0.1.0 provides the initial security middleware and response architecture:
+- Disposable entry URLs with configurable TTL, slug length, local-destination validation, and optional single-use enforcement.
+- Session-backed challenge lifecycle handling, including expiry, consumption, replay rejection, and post-verification return to the original destination.
+- Query-string preservation across challenge and disposable-entry flows.
+- Polymorphic challenge presentation with randomized identifiers, rotating copy, stable per-challenge variants, preparation and success states, and honeypot markup.
+- Server-enforced proof-of-work challenges with configurable difficulty and expiry.
+- Configurable DENY redirects restricted to trusted absolute HTTP(S) destinations.
+- Referrer blocking with normalized exact-host and subdomain matching, plus an optional missing-referrer policy.
+- Optional IP intelligence abstraction with IPinfo support, caching, VPN detection, ASN matching, ISP matching, and safe provider-failure handling.
+- Request logging with optional query-string inclusion and non-fatal write failures.
 
-- IP blocking with exact IPv4 and IPv6 matching.
-- IPv4 and IPv6 CIDR matching.
-- Custom IP rules and built-in AntiRed IP rules.
-- Bot blocking based on request User-Agent signatures.
-- Case-insensitive matching for bot signatures.
-- Built-in AntiRed bot signatures and custom bot signatures.
-- Configurable enable/disable controls for IP and bot blocking.
-- Kernel-owned middleware pipeline assembly.
-- `ALLOW`, `DENY`, and `CHALLENGE` decisions.
-- Configurable deny and challenge responses, including status, body, and headers.
-- Plain PHP integration through `Supamask::boot()`.
-- PHPUnit unit and integration test coverage.
 
-This entry documents the v0.1.0 implementation and does not claim that the version has been officially released.
-- Added cryptographically random challenge verification tokens and constant-time token validation.
-- Added session-backed verification state with configurable verification lifetime and session ID rotation after successful verification.
-- Added dedicated `ChallengeMiddleware` for opt-in session verification enforcement.
-- Added configurable challenge presentation copy with HTML escaping.
-- Added challenge response cache-control headers and method validation.
-- Added expanded challenge security and middleware integration tests.
+### Changed
+
+- Clarified the security decision model as `DENY > CHALLENGE > ALLOW`.
+- Moved hard security evaluation ahead of challenge and disposable-entry routing.
+- Kept IP intelligence opt-in; enabling VPN/ASN/ISP intelligence without required provider credentials remains an explicit configuration error.
+- Updated challenge-presentation tests to validate the current polymorphic markup and client-side success redirect behavior.
+- Isolated affected integration tests from prior `$_SERVER` and session state.
+
+### Security
+
+- Enforced terminal hard-deny precedence before challenge-route and disposable-entry handling.
+- Ensured a denied request cannot create a challenge, generate proof-of-work, mutate disposable-entry state, or reach the application origin.
+- Added regression coverage for active disposable entries combined with IP, CIDR, bot, VPN, ASN, ISP, and referrer denials.
+
+### Deprecated
+
+- Nothing.
+
+### Removed
+
+- Nothing.
+
+### Fixed
+
+- Blocked traffic using an active disposable URL now receives DENY rather than a challenge redirect.
+- Challenge, route-policy, and presentation test expectations now align with the current lifecycle and presentation architecture.
+
+## [0.1.0] - 2026-08-07
+
+### Added
+
+- Core `ALLOW`, `DENY`, and `CHALLENGE` decisions.
+- Exact IPv4/IPv6 and CIDR IP blocking.
+- Custom and AntiRed IP rules.
+- User-Agent bot blocking with custom and AntiRed signatures.
+- Configurable IP and bot middleware controls.
+- Configurable security response status, body, and headers.
+- Plain PHP front-controller integration through `Supamask::boot()`.
+- PHPUnit unit and integration coverage.
