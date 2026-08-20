@@ -16,7 +16,7 @@ Hard-denied traffic is stopped before challenge creation, proof-of-work, disposa
 - Server-verified proof-of-work
 - Polymorphic challenge presentation and honeypot markup
 - Exact IP, IPv4/IPv6 CIDR, AntiRed, and User-Agent bot blocking
-- Optional VPN, ASN, and ISP exclusions through IPinfo
+- Optional VPN, ASN, and ISP exclusions through IPinfo or ipapi.is
 - Safe hostname-based referrer blocking
 - Configurable DENY responses and optional JSON-lines request logging
 
@@ -173,15 +173,16 @@ IP intelligence is disabled by default. Enable it with provider credentials:
 'detect_isp' => true,
 'isp_exclusions' => ['AS14061', 'DigitalOcean'],
 'ip_intelligence' => [
-    'provider' => 'ipinfo',
-    'token' => getenv('SUPAMASK_IPINFO_TOKEN'),
+    'provider' => 'ipapi.is', // or 'ipinfo'
+    // ipapi.is supports anonymous single-IP lookups; a key is optional.
+    'token' => getenv('SUPAMASK_IPAPI_IS_KEY') ?: '',
     'timeout' => 2,
     'cache_ttl' => 3600,
     'cache_directory' => __DIR__ . '/../storage/ip-intelligence',
 ],
 ```
 
-When VPN/ASN/ISP intelligence is disabled, no provider credentials are required and no external lookup is made. When enabled without an IPinfo token, Supamask throws an explicit `RuntimeException` during setup; it does not silently disable the enabled security feature.
+When VPN/ASN/ISP intelligence is disabled, no provider credentials are required and no external lookup is made. IPinfo requires a token (or `SUPAMASK_IPINFO_TOKEN`) when enabled; ipapi.is supports its documented anonymous single-IP endpoint, with an optional `SUPAMASK_IPAPI_IS_KEY`.
 
 Provider failures are unknown intelligence—not confirmed malicious traffic—unless you explicitly set `ip_intelligence.fail_closed` to `true`.
 
@@ -222,7 +223,7 @@ The suite covers decision precedence, disposable lifecycle, replay prevention, p
 ## Production notes
 
 - Keep Supamask at the start of the front controller.
-- Supamask uses `REMOTE_ADDR`; configure trusted proxy handling at your web-server layer.
+- When deployed behind a proxy, configure its trusted address or CIDR in `proxy.trusted`; Supamask never trusts forwarded IP headers from an untrusted peer.
 - Use HTTPS and secure session-cookie settings.
 - Keep logs and IP-intelligence caches outside the public web root.
 

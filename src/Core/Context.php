@@ -6,6 +6,7 @@ use Supamask\Entry\DisposableEntry;
 use Supamask\Entry\DisposableEntryState;
 use Supamask\Entry\EntryClassification;
 use Supamask\Http\Request;
+use Supamask\Http\ClientIpResolver;
 use Supamask\Http\RequestContext;
 use Supamask\Http\RequestContextFactory;
 use Supamask\Security\IpIntelligence\IpIntelligenceResult;
@@ -31,7 +32,15 @@ class Context
         private ?Config $config = null,
         ?RequestContextFactory $contextFactory = null,
     ) {
-        $this->contextFactory = $contextFactory ?? new RequestContextFactory();
+        $resolvedIp = (new ClientIpResolver((array) $this->config()->get('proxy', [])))->resolve($request);
+        $request->setClientIp($resolvedIp);
+
+        if ($contextFactory !== null) {
+            $this->contextFactory = $contextFactory;
+            return;
+        }
+
+        $this->contextFactory = new RequestContextFactory();
     }
 
     public function request(): Request

@@ -5,6 +5,7 @@ namespace Supamask\Http;
 class Request
 {
     private array $server;
+    private ?string $clientIp = null;
 
     public function __construct()
     {
@@ -13,7 +14,22 @@ class Request
 
     public function ip(): string
     {
+        return $this->clientIp ?? $this->remoteAddress();
+    }
+
+    /**
+     * The address of the peer that connected directly to PHP. This must not
+     * be used for security decisions once client-IP resolution has run.
+     */
+    public function remoteAddress(): string
+    {
         return $this->server['REMOTE_ADDR'] ?? '';
+    }
+
+    /** @internal Set once by the request context's client-IP resolver. */
+    public function setClientIp(string $ip): void
+    {
+        $this->clientIp = $ip;
     }
 
     public function method(): string

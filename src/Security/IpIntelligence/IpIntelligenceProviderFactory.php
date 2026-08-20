@@ -17,6 +17,11 @@ final class IpIntelligenceProviderFactory
                 (int) ($config['timeout'] ?? 2),
                 (string) ($config['endpoint'] ?? 'https://api.ipinfo.io/lookup/'),
             ),
+            'ipapi.is', 'ipapi_is', 'ipapiis' => new IpApiIsProvider(
+                (string) ($config['token'] ?? ''),
+                (int) ($config['timeout'] ?? 2),
+                (string) ($config['endpoint'] ?? 'https://api.ipapi.is'),
+            ),
             default => throw new InvalidArgumentException('Unsupported IP intelligence provider: ' . $provider),
         };
     }

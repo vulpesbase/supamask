@@ -4,6 +4,23 @@ All notable changes to Supamask are documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and uses [Semantic Versioning](https://semver.org/).
 
+## [0.2.2] - Unreleased
+
+### Added
+
+- Trusted-proxy client IP resolution for `Forwarded`, `X-Forwarded-For`, and `X-Real-IP`, including IPv4, IPv6, and CIDR trust rules.
+- `ipapi.is` IP-intelligence provider with normalized ASN, organization, VPN, proxy, Tor, and relay information.
+
+### Changed
+
+- All IP-based middleware and request logging now consume the centrally resolved client IP.
+
+## [0.2.1] - 2026-08-19
+
+### Changed
+
+- Resolved composer dependency and distribution involving development-only files.
+
 ## [0.2.0] - 2026-08-19
 
 ### Added
@@ -17,7 +34,6 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - Referrer blocking with normalized exact-host and subdomain matching, plus an optional missing-referrer policy.
 - Optional IP intelligence abstraction with IPinfo support, caching, VPN detection, ASN matching, ISP matching, and safe provider-failure handling.
 - Request logging with optional query-string inclusion and non-fatal write failures.
-
 
 ### Changed
 

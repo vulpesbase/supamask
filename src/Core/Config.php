@@ -17,6 +17,12 @@ class Config
         'block_referrers' => false,
         'referrer_blocklist' => [],
         'block_missing_referrer' => false,
+        'proxy' => [
+            // Forwarded client-IP headers are trusted only when REMOTE_ADDR
+            // matches one of these explicit IP/CIDR rules.
+            'enabled' => false,
+            'trusted' => [],
+        ],
         'detect_isp' => false,
         'isp_exclusions' => [],
         'ip_intelligence' => [

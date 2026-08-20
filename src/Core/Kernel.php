@@ -101,12 +101,21 @@ class Kernel
         if ($ipIntelligenceProvider !== null) {
             $this->ipIntelligenceProvider = $ipIntelligenceProvider;
         } elseif ($this->config->get('block_vpn', false) || $this->config->get('detect_isp', false)) {
-            $token = (string) $this->config->get('ip_intelligence.token', getenv('SUPAMASK_IPINFO_TOKEN') ?: '');
+            $providerName = (string) $this->config->get('ip_intelligence.provider', 'ipinfo');
+            $defaultEndpoint = strtolower($providerName) === 'ipinfo'
+                ? 'https://api.ipinfo.io/lookup/'
+                : 'https://api.ipapi.is';
+            $environmentToken = strtolower($providerName) === 'ipinfo'
+                ? (getenv('SUPAMASK_IPINFO_TOKEN') ?: '')
+                : (getenv('SUPAMASK_IPAPI_IS_KEY') ?: '');
+            $token = (string) $this->config->get('ip_intelligence.token', $environmentToken);
             $provider = IpIntelligenceProviderFactory::create([
-                'provider' => $this->config->get('ip_intelligence.provider', 'ipinfo'),
+                'provider' => $providerName,
                 'token' => $token,
                 'timeout' => $this->config->get('ip_intelligence.timeout', 2),
-                'endpoint' => $this->config->get('ip_intelligence.endpoint', 'https://api.ipinfo.io/lookup/'),
+                'endpoint' => $this->config->has('ip_intelligence.endpoint')
+                    ? $this->config->get('ip_intelligence.endpoint')
+                    : $defaultEndpoint,
             ]);
 
             $cacheDirectory = $this->config->get('ip_intelligence.cache_directory');

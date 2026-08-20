@@ -18,6 +18,8 @@ Pass an array to `Supamask::boot()`. Supamask recursively merges supplied values
 | `block_referrers` | `false` | Enables referrer hostname blocking. |
 | `referrer_blocklist` | `[]` | Blocked hostnames; subdomains match. |
 | `block_missing_referrer` | `false` | Denies a missing/empty referrer. |
+| `proxy.enabled` | `false` | Enables forwarded client-IP processing from trusted proxies. |
+| `proxy.trusted` | `[]` | Trusted proxy IPs/CIDRs. Forwarded headers from all other peers are ignored. |
 
 ## Challenge settings
 
@@ -64,7 +66,7 @@ Default `entry.policy` values are `direct: allow`, `referred: allow`, `seeded: c
 | `responses.deny.redirect` | `null` | Required trusted URL for redirects. |
 | `responses.deny.redirect_status` | `302` | A 3xx redirect status. |
 | `ip_intelligence.provider` | `ipinfo` | Supported provider identifier. |
-| `ip_intelligence.token` | `''` | Provider token; may also come from `SUPAMASK_IPINFO_TOKEN`. |
+| `ip_intelligence.token` | `''` | Provider token/key; IPinfo may also use `SUPAMASK_IPINFO_TOKEN`, and ipapi.is may use `SUPAMASK_IPAPI_IS_KEY`. |
 | `ip_intelligence.timeout` | `2` | Provider HTTP timeout in seconds. |
 | `ip_intelligence.cache_ttl` | `3600` | Cache lifetime in seconds. |
 | `ip_intelligence.cache_directory` | `null` | Use file cache when set; otherwise in-memory cache. |
@@ -76,3 +78,20 @@ Default `entry.policy` values are `direct: allow`, `referred: allow`, `seeded: c
 | `logging.include_query_string` | `false` | Includes query strings in logged URIs. |
 
 See [security model](security-model.md) for precedence and [operations](operations.md) for credential and failure behavior.
+
+## Trusted proxies and client IPs
+
+By default Supamask uses PHP's `REMOTE_ADDR`. To use `Forwarded`,
+`X-Forwarded-For`, or `X-Real-IP`, explicitly enable the resolver and name the
+addresses that connect directly to PHP:
+
+```php
+'proxy' => [
+    'enabled' => true,
+    'trusted' => ['10.0.0.0/8', '2001:db8:1::/64'],
+],
+```
+
+For a trusted peer, Supamask walks the forwarded chain from right to left and
+uses the first non-trusted address. This supports stacked CDN/load-balancer
+deployments while rejecting spoofed forwarded headers from direct clients.
