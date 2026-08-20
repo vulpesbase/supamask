@@ -53,6 +53,16 @@ final class ClientIpResolverTest extends TestCase
         $this->assertSame('198.51.100.42', $context->request()->ip());
     }
 
+    public function testIpv4MappedIpv6ForwardedAddressIsNormalized(): void
+    {
+        $context = $this->context([
+            'REMOTE_ADDR' => '127.0.0.100',
+            'HTTP_X_FORWARDED_FOR' => '::ffff:105.112.76.240',
+        ], ['enabled' => true, 'trusted' => ['127.0.0.100']]);
+
+        $this->assertSame('105.112.76.240', $context->request()->ip());
+    }
+
     public function testIpBlockingUsesTheResolvedClientAddress(): void
     {
         $context = $this->context([

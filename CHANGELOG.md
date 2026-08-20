@@ -4,7 +4,13 @@ All notable changes to Supamask are documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and uses [Semantic Versioning](https://semver.org/).
 
-## [0.2.2] - Unreleased
+## [0.2.3] - 2026-08-20
+
+### Fixed
+
+- Normalized IPv4-mapped IPv6 forwarded addresses so existing IPv4 rules match proxied clients.
+
+## [0.2.2] - 2026-08-20
 
 ### Added
 
